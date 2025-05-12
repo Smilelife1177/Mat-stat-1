@@ -1,0 +1,12 @@
+<NotepadPlus>
+    <Session activeView="0">
+        <mainView activeIndex="3">
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="21136" startPos="0" endPos="0" selMode="0" lang="&#x041E;&#x0431;&#x044B;&#x0447;&#x043D;&#x044B;&#x0439; &#x0422;&#x0435;&#x043A;&#x0441;&#x0442;" encoding="-1" filename="D:\Learn\Programmer\semester4\Mathemetis statistikaaaaaa\Projects1\Projects1\bin\Debug\data\data\200\KL_EXTR.DAT" backupFilePath="" originalFileLastModifTimestamp="1037033108" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="1182" startPos="0" endPos="0" selMode="0" lang="XML" encoding="-1" filename="D:\Learn\Programmer\semester4\Mathemetis statistikaaaaaa\Projects1\Projects1\Properties\Resources.resx" backupFilePath="" originalFileLastModifTimestamp="1485341459" />
+            <File firstVisibleLine="165" xOffset="0" scrollWidth="670" startPos="1478" endPos="1478" selMode="0" lang="&#x041E;&#x0431;&#x044B;&#x0447;&#x043D;&#x044B;&#x0439; &#x0422;&#x0435;&#x043A;&#x0441;&#x0442;" encoding="-1" filename="D:\Learn\Programmer\semester4\Mathemetis statistikaaaaaa\Projects1\Projects1\bin\Debug\data\data\NORM.txt" backupFilePath="" originalFileLastModifTimestamp="1493186064" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="678" startPos="117" endPos="117" selMode="0" lang="&#x041E;&#x0431;&#x044B;&#x0447;&#x043D;&#x044B;&#x0439; &#x0422;&#x0435;&#x043A;&#x0441;&#x0442;" encoding="-1" filename="D:\Learn\Programmer\semester4\Mathemetis statistikaaaaaa\Projects1\Projects1\bin\Debug\data\data\200\Rel.txt" backupFilePath="" originalFileLastModifTimestamp="1493196123" />
+            <File firstVisibleLine="0" xOffset="0" scrollWidth="678" startPos="0" endPos="0" selMode="0" lang="&#x041E;&#x0431;&#x044B;&#x0447;&#x043D;&#x044B;&#x0439; &#x0422;&#x0435;&#x043A;&#x0441;&#x0442;" encoding="-1" filename="D:\Learn\Programmer\semester4\Mathemetis statistikaaaaaa\Projects1\Projects1\bin\Debug\data\data\200\RELAY.DAT" backupFilePath="" originalFileLastModifTimestamp="1033057364" />
+        </mainView>
+        <subView activeIndex="0" />
+    </Session>
+</NotepadPlus>

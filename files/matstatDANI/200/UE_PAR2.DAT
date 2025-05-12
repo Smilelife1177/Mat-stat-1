@@ -1,0 +1,9 @@
+icKeyToken="31bf3856ad364e35" versionScope="nonSxS" />
+          <assemblyIdentity name="Microsoft-Windows-ParentalControlsRatingSystem-GameRatingsSystems.Resources" version="6.1.7601.22183" processorArchitecture="wow64" language="zh-CN" buildType="release" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS" />
+          <assemblyIdentity name="Microsoft-Windows-ParentalControlsRatingSystem-GameRatingsSystems.Resources" version="6.1.7601.22183" processorArchitecture="wow64" language="zh-TW" buildType="release" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS" />
+          <assemblyIdentity name="Microsoft-Windows-ParentalControlsSettings" version="6.1.7601.22183" processorArchitecture="wow64" language="neutral" buildType="release" publicKeyToken="31bf3856ad364e35" versionScope="nonSxS" />
+        </updateComponent>
+      </applicable>
+    </update>
+    <update name="2773072-115_neutral_LDR">
+      <appli
