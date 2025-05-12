@@ -1,0 +1,46 @@
+@startuml
+scale 0.8
+
+package "Use Case Diagram\nStatistical Analysis" #..# {
+  actor User
+
+  [Load Data] #--> User
+  [Save Data] #--> User
+  [Configure Parameters] #--> User
+  [Edit Data] #--> User
+  [Edit Data] .> [Standardize Data] : <<extend>>
+  [Edit Data] .> [Log Transform] : <<extend>>
+  [Edit Data] .> [Shift Data] : <<extend>>
+  [Edit Data] .> [Remove Outliers] : <<extend>>
+  [Edit Data] .> [Apply Bounds] : <<extend>>
+  [Edit Data] .> [Reset Data] : <<extend>>
+
+  [Analyze Data] #--> User
+  [Analyze Data] .> [Build Histogram] : <<extend>>
+  [Analyze Data] .> [Calculate Characteristics] : <<extend>>
+  [Analyze Data] .> [Plot Distributions] : <<extend>>
+  [Analyze Data] .> [Analyze Exponential] : <<extend>>
+  [Analyze Data] .> [Analyze Call Types] : <<extend>>
+
+  [Update Characteristics] #--> User
+  [Build Histogram] .> [Update Characteristics] : <<include>>
+
+  [Load Data] -[hidden]down- [Save Data]
+  [Save Data] -[hidden]down- [Configure Parameters]
+  [Configure Parameters] -[hidden]down- [Edit Data]
+  [Edit Data] -[hidden]down- [Analyze Data]
+  [Analyze Data] -[hidden]down- [Update Characteristics]
+
+  [Standardize Data] -[hidden]right- [Log Transform]
+  [Log Transform] -[hidden]right- [Shift Data]
+  [Shift Data] -[hidden]right- [Remove Outliers]
+  [Remove Outliers] -[hidden]right- [Apply Bounds]
+  [Apply Bounds] -[hidden]right- [Reset Data]
+
+  [Build Histogram] -[hidden]right- [Calculate Characteristics]
+  [Calculate Characteristics] -[hidden]right- [Plot Distributions]
+  [Plot Distributions] -[hidden]right- [Analyze Exponential]
+  [Analyze Exponential] -[hidden]right- [Analyze Call Types]
+}
+
+@enduml

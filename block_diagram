@@ -1,0 +1,63 @@
+// Блок-схема додатка для статистичного аналізу
+digraph {
+	rankdir=TB size="10,10"
+	node [fillcolor=lightblue shape=box style=filled]
+	edge [color=blue]
+	main [label="main.py
+(Точка входу)" fillcolor=lightgreen]
+	gui [label="gui.py
+(Інтерфейс)" fillcolor=lightyellow]
+	logic [label="logic.py
+(Логіка обробки)" fillcolor=lightcoral]
+	root [label="Tkinter Root
+(Головне вікно)" fillcolor=lightgray]
+	gui_objects [label="GUI Objects
+(Кнопки, вкладки, графіки)" fillcolor=lightcyan]
+	data [label="Дані
+(values, call_types)" fillcolor=lightpink]
+	create_gui [label="create_gui()
+Створює інтерфейс" fillcolor=lightyellow]
+	init_logic [label="initialize_logic()
+Прив’язує логіку" fillcolor=lightcoral]
+	load_data [label="load_data()
+Завантаження даних" fillcolor=lightcoral]
+	update_hist [label="update_histogram()
+Оновлення гістограми" fillcolor=lightcoral]
+	char [label="update_characteristics()
+Характеристики" fillcolor=lightcoral]
+	dist [label="plot_distribution_functions()
+Функції розподілу" fillcolor=lightcoral]
+	exp [label="plot_exponential_distribution()
+Імовірнісна сітка" fillcolor=lightcoral]
+	call_types [label="analyze_call_types()
+Аналіз за типами" fillcolor=lightcoral]
+	edit [label="Редагування
+(стандартизація, аномалії тощо)" fillcolor=lightcoral]
+	main -> root [label="Створює"]
+	main -> gui [label="Викликає create_gui()"]
+	gui -> gui_objects [label="Повертає"]
+	main -> logic [label="Передає gui_objects до
+initialize_logic()"]
+	gui_objects -> create_gui [label="Включає"]
+	logic -> init_logic [label="Включає"]
+	init_logic -> load_data [label="Прив’язує"]
+	init_logic -> update_hist [label="Прив’язує"]
+	init_logic -> char [label="Прив’язує"]
+	init_logic -> dist [label="Прив’язує"]
+	init_logic -> exp [label="Прив’язує"]
+	init_logic -> call_types [label="Прив’язує"]
+	init_logic -> edit [label="Прив’язує"]
+	load_data -> data [label="Оновлює"]
+	update_hist -> gui_objects [label="Оновлює гістограму"]
+	char -> gui_objects [label="Оновлює таблицю"]
+	dist -> gui_objects [label="Малює графік"]
+	exp -> gui_objects [label="Малює сітку"]
+	call_types -> gui_objects [label="Оновлює таблицю
+та гістограми"]
+	edit -> data [label="Модифікує"]
+	data -> update_hist [label="Використовує"]
+	data -> char [label="Використовує"]
+	data -> dist [label="Використовує"]
+	data -> exp [label="Використовує"]
+	data -> call_types [label="Використовує"]
+}
