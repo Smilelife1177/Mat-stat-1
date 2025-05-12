@@ -13,12 +13,14 @@ def create_gui(root):
     tab2 = ttk.Frame(notebook)
     tab3 = ttk.Frame(notebook)
     tab4 = ttk.Frame(notebook)
+    tab5 = ttk.Frame(notebook)  # Нова вкладка для розподілу Релея
 
     # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
     notebook.add(tab2, text='Функції розподілу')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab4, text='Аналіз за типами')
+    notebook.add(tab5, text='Розподіл Релея')  # Нова вкладка
 
     # Вкладка 1: Основний аналіз
     canvas = tk.Canvas(tab1)
@@ -115,6 +117,8 @@ def create_gui(root):
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
     cdf_btn.pack(fill=tk.X, pady=5)
 
+    rayleigh_btn = tk.Button(scrollable_frame, text="Побудувати розподіл Релея", state=tk.DISABLED)
+    rayleigh_btn.pack(fill=tk.X, pady=5)
     # Нова кнопка для аналізу за типами
     call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
     call_type_btn.pack(fill=tk.X, pady=5)
@@ -149,32 +153,34 @@ def create_gui(root):
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
     return {
-        'bin_count_var': bin_count_var,
-        'info_text': info_text,
-        'lower_bound_var': lower_bound_var,
-        'upper_bound_var': upper_bound_var,
-        'editing_buttons': editing_buttons,
-        'plot_btn': plot_btn,
-        'cdf_btn': cdf_btn,
-        'call_type_btn': call_type_btn,  # Додаємо нову кнопку
-        'char_table': char_table,
-        'data_box': data_box,
-        'fig': fig,
-        'hist_ax': hist_ax,
-        'hist_canvas': hist_canvas,
-        'tab2': tab2,
-        'tab3': tab3,
-        'tab4': tab4,  # Додаємо нову вкладку
-        'load_button': load_button,
-        'update_button': update_button,
-        'apply_bounds_btn': apply_bounds_btn,
-        'standardize_btn': standardize_btn,
-        'log_btn': log_btn,
-        'shift_btn': shift_btn,
-        'outliers_btn': outliers_btn,
-        'reset_btn': reset_btn,
-        'save_btn': save_btn,
-        'confidence_var': confidence_var,
-        'precision_var': precision_var,
-        'refresh_graph_button': refresh_graph_button
-    }
+    'bin_count_var': bin_count_var,
+    'info_text': info_text,
+    'lower_bound_var': lower_bound_var,
+    'upper_bound_var': upper_bound_var,
+    'editing_buttons': editing_buttons,
+    'plot_btn': plot_btn,
+    'cdf_btn': cdf_btn,
+    'call_type_btn': call_type_btn,
+    'rayleigh_btn': rayleigh_btn,  # Нова кнопка
+    'char_table': char_table,
+    'data_box': data_box,
+    'fig': fig,
+    'hist_ax': hist_ax,
+    'hist_canvas': hist_canvas,
+    'tab2': tab2,
+    'tab3': tab3,
+    'tab4': tab4,
+    'tab5': tab5,  # Нова вкладка
+    'load_button': load_button,
+    'update_button': update_button,
+    'apply_bounds_btn': apply_bounds_btn,
+    'standardize_btn': standardize_btn,
+    'log_btn': log_btn,
+    'shift_btn': shift_btn,
+    'outliers_btn': outliers_btn,
+    'reset_btn': reset_btn,
+    'save_btn': save_btn,
+    'confidence_var': confidence_var,
+    'precision_var': precision_var,
+    'refresh_graph_button': refresh_graph_button
+}

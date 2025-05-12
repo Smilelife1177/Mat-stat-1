@@ -219,6 +219,7 @@ def load_data():
         gui_objects['plot_btn'].config(state=tk.NORMAL)
         gui_objects['cdf_btn'].config(state=tk.NORMAL)
         gui_objects['call_type_btn'].config(state=tk.NORMAL)
+        gui_objects['rayleigh_btn'].config(state=tk.NORMAL)  # Додаємо активацію нової кнопки
         min_val, max_val = np.min(values), np.max(values)
         gui_objects['lower_bound_var'].set(str(min_val))
         gui_objects['upper_bound_var'].set(str(max_val))
@@ -660,10 +661,99 @@ def reset_data():
         widget.destroy()
     messagebox.showinfo("Скидання", "Дані повернуто до початкового стану")
 
+def plot_rayleigh_distribution():
+    global values
+    if len(values) == 0:
+        messagebox.showwarning("Попередження", "Немає даних для побудови розподілу Релея")
+        return
+    
+    if np.any(values < 0):
+        messagebox.showerror("Помилка", "Розподіл Релея можливий лише для невід’ємних значень")
+        return
+    
+    for widget in gui_objects['tab5'].winfo_children():
+        widget.destroy()
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Обчислення гістограми для ECDF
+    n_bins = gui_objects['bin_count_var'].get()
+    if n_bins == 0:
+        n_bins = int(np.sqrt(len(values)))  # Автоматичний вибір, якщо 0
+    bin_dt, bin_gr = np.histogram(values, bins=n_bins)
+    Y = np.cumsum(bin_dt) / len(values)
+
+    # Побудова ступінчастої емпіричної функції розподілу
+    for i in range(len(Y)):
+        ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
+    ax.plot([bin_gr[-1], bin_gr[-1]], [Y[-1], 1], color='green', linewidth=2)
+    
+    # Оцінка параметра σ за формулою з книги: σ = √(2/π) * E[ξ]
+    mean = np.mean(values)
+    sigma = np.sqrt(2 / np.pi) * mean
+    
+    # Теоретична функція щільності розподілу Релея
+    x_theor = np.linspace(0, np.max(values) * 1.2, 100)
+    pdf_rayleigh = (x_theor / sigma**2) * np.exp(-x_theor**2 / (2 * sigma**2))
+    ax.plot(x_theor, pdf_rayleigh, 'b-', label=f'Щільність Релея (σ={sigma:.4f})')
+    
+    # Теоретична кумулятивна функція розподілу Релея
+    cdf_rayleigh = 1 - np.exp(-x_theor**2 / (2 * sigma**2))
+    ax.plot(x_theor, cdf_rayleigh, 'r-', label=f'Розподіл Релея (σ={sigma:.4f})')
+    
+    # Довірчий інтервал
+    confidence = gui_objects['confidence_var'].get() / 100
+    n = len(values)
+    epsilon = np.sqrt(-0.5 * np.log(1 - confidence) / n)
+    ax.fill_between(x_theor, np.maximum(cdf_rayleigh - epsilon, 0), np.minimum(cdf_rayleigh + epsilon, 1), 
+                    color='red', alpha=0.2, label='Довірчий інтервал')
+    
+    # Налаштування графіка
+    ax.set_title('Розподіл Релея та емпіричні дані')
+    ax.set_xlabel('Час очікування (хв)')
+    ax.set_ylabel('Ймовірність / Щільність')
+    ax.legend()
+    ax.grid(True, linestyle='--', alpha=0.7)
+    
+    ax.set_xlim(0, np.max(values) * 1.2)
+    ax.set_ylim(0, max(np.max(pdf_rayleigh) * 1.1, 1.05))
+    
+    canvas = FigureCanvasTkAgg(fig, master=gui_objects['tab5'])
+    canvas.draw()
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    
+    # Тест Колмогорова-Смірнова
+    ks_statistic, ks_pvalue = kstest(values, lambda x: 1 - np.exp(-x**2 / (2 * sigma**2)), args=(), N=n)
+    critical_value = np.sqrt(-0.5 * np.log((1 - confidence) / 2)) / np.sqrt(n)
+    conclusion = "Розподіл відповідає Релея" if ks_statistic < critical_value else "Розподіл не відповідає Релея"
+    ks_text = (f"Тест Колмогорова-Смірнова:\nСтатистика: {ks_statistic:.4f}\n"
+               f"Критичне значення: {critical_value:.4f}\n"
+               f"p-значення: {ks_pvalue:.4f}\n"
+               f"Висновок: {conclusion}")
+    info_frame = tk.Frame(gui_objects['tab5'])
+    info_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, padx=10, pady=10)
+    info_label = ttk.Label(info_frame, text=ks_text, justify=tk.LEFT)
+    info_label.pack()
+    
+    # Додаткові характеристики
+    E_xi = mean
+    D_xi = (2 - np.pi / 2) * (sigma**2)
+    A_xi = 0.631
+    E_xi_excess = -0.245
+    char_text = (f"Характеристики:\nСереднє E[ξ] = {E_xi:.4f}\n"
+                 f"Дисперсія D[ξ] = {D_xi:.4f}\n"
+                 f"Асиметрія A = {A_xi:.4f}\n"
+                 f"Ексцес E = {E_xi_excess:.4f}\n"
+                 f"Параметр σ = {sigma:.4f}")
+    char_frame = tk.Frame(gui_objects['tab5'])
+    char_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, padx=10, pady=10)
+    char_label = ttk.Label(char_frame, text=char_text, justify=tk.LEFT)
+    char_label.pack()
+
 def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
-    
+    gui_objects['rayleigh_btn'].config(command=plot_rayleigh_distribution)
     gui_objects['save_btn'].config(command=save_data)
     gui_objects['data_box'].bind('<FocusOut>', update_from_data_box)
     gui_objects['load_button'].config(command=load_data)
