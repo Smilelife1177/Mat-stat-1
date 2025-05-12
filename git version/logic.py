@@ -293,12 +293,12 @@ def plot_distribution_functions():
     
     bin_dt, bin_gr = np.histogram(values, bins=n_bins)
     Y = np.cumsum(bin_dt) / len(values)
-    
-    ax.plot([bin_gr[0], bin_gr[0]], [0, Y[0]], color='green', linewidth=2, label='Емпіричний розподіл')
+    ###
+    # Початок з першого інтервалу, прибираємо вертикальний стрибок на початку
     for i in range(len(Y)):
-        ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2)
+        ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
     ax.plot([bin_gr[-1], bin_gr[-1]], [Y[-1], 1], color='green', linewidth=2)
-    
+    ###
     mean, std = np.mean(values), np.std(values)
     confidence = gui_objects['confidence_var'].get() / 100
     
