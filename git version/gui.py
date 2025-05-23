@@ -4,25 +4,23 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 
 def create_gui(root):
-    # Створюємо notebook для вкладок
     notebook = ttk.Notebook(root)
     notebook.pack(fill='both', expand=True)
 
-    # Створюємо чотири вкладки
     tab1 = ttk.Frame(notebook)
     tab2 = ttk.Frame(notebook)
     tab3 = ttk.Frame(notebook)
     tab4 = ttk.Frame(notebook)
-    tab5 = ttk.Frame(notebook)  # Нова вкладка для розподілу Релея
+    tab5 = ttk.Frame(notebook)
+    tab6 = ttk.Frame(notebook)  # Нова вкладка для порівняння розподілів
 
-    # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
-    notebook.add(tab2, text='Функції розподілу')
+    notebook.add(tab2, text='Нормальний розподіл')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab4, text='Аналіз за типами')
-    notebook.add(tab5, text='Розподіл Релея')  # Нова вкладка
+    notebook.add(tab5, text='Розподіл Релея')
+    notebook.add(tab6, text='Порівняння розподілів')
 
-    # Вкладка 1: Основний аналіз
     canvas = tk.Canvas(tab1)
     scrollbar = tk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas)
@@ -69,6 +67,12 @@ def create_gui(root):
     precision_entry = tk.Entry(scrollable_frame, textvariable=precision_var)
     precision_entry.pack()
 
+    distributions_label = tk.Label(scrollable_frame, text="Оберіть розподіли (через кому: norm,expon,weibull,uniform,rayleigh):")
+    distributions_label.pack()
+    distributions_var = tk.StringVar(value="norm,expon,weibull,uniform,rayleigh")
+    distributions_entry = tk.Entry(scrollable_frame, textvariable=distributions_var)
+    distributions_entry.pack()
+
     bounds_frame = ttk.LabelFrame(scrollable_frame, text="Встановлення границь", padding=(5, 5))
     bounds_frame.pack(fill='x', pady=10)
 
@@ -106,12 +110,12 @@ def create_gui(root):
     outliers_btn = tk.Button(edit_frame, text="Вилучити аномальні дані", state=tk.DISABLED)
     outliers_btn.pack(fill=tk.X, pady=2)
 
-    reset_btn = tk.Button(edit_frame, text="скидання кнопка НАЖМИНАМЕНЕ", state=tk.DISABLED)
+    reset_btn = tk.Button(edit_frame, text="Скинути дані", state=tk.DISABLED)
     reset_btn.pack(fill=tk.X, pady=2)
 
     editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, reset_btn, apply_bounds_btn]
 
-    plot_btn = tk.Button(scrollable_frame, text="Побудувати функції розподілу", state=tk.DISABLED)
+    plot_btn = tk.Button(scrollable_frame, text="Побудувати нормальний розподіл", state=tk.DISABLED)
     plot_btn.pack(fill=tk.X, pady=5)
 
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
@@ -119,9 +123,12 @@ def create_gui(root):
 
     rayleigh_btn = tk.Button(scrollable_frame, text="Побудувати розподіл Релея", state=tk.DISABLED)
     rayleigh_btn.pack(fill=tk.X, pady=5)
-    # Нова кнопка для аналізу за типами
+
     call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
     call_type_btn.pack(fill=tk.X, pady=5)
+
+    distributions_btn = tk.Button(scrollable_frame, text="Порівняти розподіли", state=tk.DISABLED)
+    distributions_btn.pack(fill=tk.X, pady=5)
 
     char_frame = ttk.LabelFrame(scrollable_frame, text="Точкові характеристики", padding=(5, 5))
     char_frame.pack(fill='x', pady=10)
@@ -153,34 +160,37 @@ def create_gui(root):
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
     return {
-    'bin_count_var': bin_count_var,
-    'info_text': info_text,
-    'lower_bound_var': lower_bound_var,
-    'upper_bound_var': upper_bound_var,
-    'editing_buttons': editing_buttons,
-    'plot_btn': plot_btn,
-    'cdf_btn': cdf_btn,
-    'call_type_btn': call_type_btn,
-    'rayleigh_btn': rayleigh_btn,  # Нова кнопка
-    'char_table': char_table,
-    'data_box': data_box,
-    'fig': fig,
-    'hist_ax': hist_ax,
-    'hist_canvas': hist_canvas,
-    'tab2': tab2,
-    'tab3': tab3,
-    'tab4': tab4,
-    'tab5': tab5,  # Нова вкладка
-    'load_button': load_button,
-    'update_button': update_button,
-    'apply_bounds_btn': apply_bounds_btn,
-    'standardize_btn': standardize_btn,
-    'log_btn': log_btn,
-    'shift_btn': shift_btn,
-    'outliers_btn': outliers_btn,
-    'reset_btn': reset_btn,
-    'save_btn': save_btn,
-    'confidence_var': confidence_var,
-    'precision_var': precision_var,
-    'refresh_graph_button': refresh_graph_button
-}
+        'bin_count_var': bin_count_var,
+        'info_text': info_text,
+        'lower_bound_var': lower_bound_var,
+        'upper_bound_var': upper_bound_var,
+        'editing_buttons': editing_buttons,
+        'plot_btn': plot_btn,
+        'cdf_btn': cdf_btn,
+        'call_type_btn': call_type_btn,
+        'rayleigh_btn': rayleigh_btn,
+        'distributions_btn': distributions_btn,
+        'char_table': char_table,
+        'data_box': data_box,
+        'fig': fig,
+        'hist_ax': hist_ax,
+        'hist_canvas': hist_canvas,
+        'tab2': tab2,
+        'tab3': tab3,
+        'tab4': tab4,
+        'tab5': tab5,
+        'tab6': tab6,
+        'load_button': load_button,
+        'update_button': update_button,
+        'apply_bounds_btn': apply_bounds_btn,
+        'standardize_btn': standardize_btn,
+        'log_btn': log_btn,
+        'shift_btn': shift_btn,
+        'outliers_btn': outliers_btn,
+        'reset_btn': reset_btn,
+        'save_btn': save_btn,
+        'confidence_var': confidence_var,
+        'precision_var': precision_var,
+        'distributions_var': distributions_var,
+        'refresh_graph_button': refresh_graph_button
+    }

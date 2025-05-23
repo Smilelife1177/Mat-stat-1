@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon
+from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon, pearsonr, weibull_min, uniform
+from scipy.optimize import minimize
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -46,7 +47,7 @@ def update_from_data_box(event=None):
         
         if not np.array_equal(values, new_values):
             values = new_values
-            call_types = np.array(['Невідомо'] * len(values))  # Оновлюємо заглушкою
+            call_types = np.array(['Невідомо'] * len(values))
             print("Оновлені значення з текстового поля:", values)
             update_statistics()
             update_characteristics()
@@ -148,14 +149,12 @@ def load_data():
             wait_time_col = "Час очікування (хв)"
             call_type_col = "Тип дзвінка"
             
-            # Перевіряємо стовпець із часом очікування
             if wait_time_col not in df.columns:
                 possible_cols = [col for col in df.columns if "час" in col.lower() or "wait" in col.lower()]
                 if not possible_cols:
                     raise ValueError("У файлі немає стовпця з часом очікування. Перевірте структуру даних.")
                 wait_time_col = possible_cols[0]
             
-            # Перевіряємо стовпець із типом дзвінка
             if call_type_col not in df.columns:
                 possible_type_cols = [col for col in df.columns if "тип" in col.lower() or "type" in col.lower()]
                 if not possible_type_cols:
@@ -164,7 +163,6 @@ def load_data():
                 else:
                     call_type_col = possible_type_cols[0]
             
-            # Обробка часу очікування
             df[wait_time_col] = df[wait_time_col].replace(r'^\s*$', np.nan, regex=True)
             df[wait_time_col] = pd.to_numeric(df[wait_time_col], errors='coerce')
             values = df[wait_time_col].to_numpy()
@@ -182,7 +180,6 @@ def load_data():
             
             print("Значення після заміни:", values)
             
-            # Обробка типів дзвінків
             if call_type_col in df.columns:
                 call_types = df[call_type_col].fillna('Невідомо').to_numpy()
             else:
@@ -191,7 +188,6 @@ def load_data():
             print("Типи дзвінків:", call_types)
             
         else:
-            # Текстові файли не підтримують типи дзвінків
             with open(file_path, 'r') as file:
                 data = file.read().replace(',', '.').strip()
             data_list = [x for x in data.split() if x]
@@ -219,7 +215,8 @@ def load_data():
         gui_objects['plot_btn'].config(state=tk.NORMAL)
         gui_objects['cdf_btn'].config(state=tk.NORMAL)
         gui_objects['call_type_btn'].config(state=tk.NORMAL)
-        gui_objects['rayleigh_btn'].config(state=tk.NORMAL)  # Додаємо активацію нової кнопки
+        gui_objects['rayleigh_btn'].config(state=tk.NORMAL)
+        gui_objects['distributions_btn'].config(state=tk.NORMAL)  # Активація нової кнопки
         min_val, max_val = np.min(values), np.max(values)
         gui_objects['lower_bound_var'].set(str(min_val))
         gui_objects['upper_bound_var'].set(str(max_val))
@@ -276,6 +273,177 @@ def update_histogram():
     bin_width = range_val / bin_count
     gui_objects['info_text'].set(f'Кількість класів: {bin_count}\nКрок розбиття: {bin_width:.3f}\nРозмах: {range_val:.3f}\nКількість даних: {len(values)}')
 
+def pearson_chi2_test(data, dist_name, params, bins):
+    """Виконує тест Пірсона для перевірки відповідності розподілу."""
+    hist, bin_edges = np.histogram(data, bins=bins, density=False)
+    expected = []
+    n = len(data)
+    for i in range(len(bin_edges) - 1):
+        if dist_name == 'norm':
+            p = norm.cdf(bin_edges[i + 1], *params) - norm.cdf(bin_edges[i], *params)
+        elif dist_name == 'expon':
+            p = expon.cdf(bin_edges[i + 1], *params) - expon.cdf(bin_edges[i], *params)
+        elif dist_name == 'weibull':
+            p = weibull_min.cdf(bin_edges[i + 1], *params) - weibull_min.cdf(bin_edges[i], *params)
+        elif dist_name == 'uniform':
+            p = uniform.cdf(bin_edges[i + 1], *params) - uniform.cdf(bin_edges[i], *params)
+        elif dist_name == 'rayleigh':
+            p = (1 - np.exp(-bin_edges[i + 1]**2 / (2 * params[0]**2))) - (1 - np.exp(-bin_edges[i]**2 / (2 * params[0]**2)))
+        expected.append(p * n)
+    expected = np.array(expected)
+    observed = hist
+    chi2_stat = np.sum((observed - expected)**2 / expected)
+    df = len(hist) - 1 - len(params)
+    p_value = 1 - chi2.cdf(chi2_stat, df)
+    return chi2_stat, p_value, df
+
+def estimate_weibull_params(data):
+    """Оцінка параметрів розподілу Вейбулла методом максимальної правдоподібності."""
+    def weibull_loglik(params):
+        c, scale = params
+        if c <= 0 or scale <= 0:
+            return np.inf
+        return -np.sum(weibull_min.logpdf(data, c, loc=0, scale=scale))
+    
+    initial_guess = [1.0, np.mean(data)]
+    result = minimize(weibull_loglik, initial_guess, method='Nelder-Mead')
+    if result.success:
+        c, scale = result.x
+        # Оцінка стандартних помилок через чисельний гессіан
+        std_err_c = np.sqrt(result.hess_inv[0, 0]) if hasattr(result, 'hess_inv') else np.nan
+        std_err_scale = np.sqrt(result.hess_inv[1, 1]) if hasattr(result, 'hess_inv') else np.nan
+        return c, scale, std_err_c, std_err_scale
+    return np.nan, np.nan, np.nan, np.nan
+
+def plot_all_distributions():
+    global values
+    if len(values) == 0:
+        messagebox.showwarning("Попередження", "Немає даних для побудови розподілів")
+        return
+    
+    if np.any(values < 0) and ('weibull' in [dist for dist in gui_objects['distributions_var'].get().split(',')] or 
+                              'expon' in [dist for dist in gui_objects['distributions_var'].get().split(',')] or 
+                              'rayleigh' in [dist for dist in gui_objects['distributions_var'].get().split(',')]):
+        messagebox.showerror("Помилка", "Експоненціальний, Вейбулла та Релея розподіли можливі лише для невід’ємних значень")
+        return
+    
+    for widget in gui_objects['tab6'].winfo_children():
+        widget.destroy()
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    n_bins = gui_objects['bin_count_var'].get()
+    if n_bins == 0:
+        n_bins = int(np.sqrt(len(values)))
+    
+    bin_dt, bin_gr = np.histogram(values, bins=n_bins)
+    Y = np.cumsum(bin_dt) / len(values)
+    for i in range(len(Y)):
+        ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
+    ax.plot([bin_gr[-1], bin_gr[-1]], [Y[-1], 1], color='green', linewidth=2)
+    
+    confidence = gui_objects['confidence_var'].get() / 100
+    n = len(values)
+    epsilon = np.sqrt(-0.5 * np.log(1 - confidence) / n)
+    
+    x_min, x_max = np.min(values), np.max(values)
+    x_range = x_max - x_min if x_max != x_min else 1
+    x_lower = x_min - 0.1 * x_range
+    x_margin = 0.1 * x_range
+    x_upper = x_max + x_margin
+    # x_upper = x_max + x_margin = 0.1 * x_range #########
+    
+    x_theor = np.linspace(x_lower, x_upper, 1000)
+    
+    distributions = gui_objects['distributions_var'].get().split(',')
+    colors = ['red', 'blue', 'purple', 'orange', 'cyan']
+    dist_info = []
+    
+    for idx, dist in enumerate(distributions):
+        dist = dist.strip()
+        if dist == 'norm':
+            mean, std = np.mean(values), np.std(values, ddof=1)
+            cdf = norm.cdf(x_theor, mean, std)
+            ax.plot(x_theor, cdf, color=colors[idx % len(colors)], label=f'Нормальний (μ={mean:.4f}, σ={std:.4f})')
+            ks_stat, ks_p = kstest(values, 'norm', args=(mean, std))
+            chi2_stat, chi2_p, df = pearson_chi2_test(values, 'norm', (mean, std), n_bins)
+            dist_info.append(f"Нормальний розподіл:\nμ={mean:.4f} (±{sem(values):.4f})\nσ={std:.4f}\n"
+                            f"KS: стат={ks_stat:.4f}, p={ks_p:.4f}\n"
+                            f"Пірсон: χ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
+            ax.fill_between(x_theor, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1), 
+                            color=colors[idx % len(colors)], alpha=0.2)
+        
+        elif dist == 'expon':
+            mean = np.mean(values)
+            scale = mean
+            cdf = expon.cdf(x_theor, loc=0, scale=scale)
+            ax.plot(x_theor, cdf, color=colors[idx % len(colors)], label=f'Експоненціальний (λ={1/scale:.4f})')
+            ks_stat, ks_p = kstest(values, 'expon', args=(0, scale))
+            chi2_stat, chi2_p, df = pearson_chi2_test(values, 'expon', (0, scale), n_bins)
+            dist_info.append(f"Експоненціальний розподіл:\nλ={1/scale:.4f} (±{1/(np.sqrt(n)*mean):.4f})\n"
+                            f"KS: стат={ks_stat:.4f}, p={ks_p:.4f}\n"
+                            f"Пірсон: χ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
+            ax.fill_between(x_theor, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1), 
+                            color=colors[idx % len(colors)], alpha=0.2)
+        
+        elif dist == 'weibull':
+            c, scale, std_err_c, std_err_scale = estimate_weibull_params(values)
+            if np.isnan(c) or np.isnan(scale):
+                messagebox.showerror("Помилка", "Не вдалося оцінити параметри Вейбулла")
+                continue
+            cdf = weibull_min.cdf(x_theor, c, loc=0, scale=scale)
+            ax.plot(x_theor, cdf, color=colors[idx % len(colors)], label=f'Вейбулла (c={c:.4f}, scale={scale:.4f})')
+            ks_stat, ks_p = kstest(values, lambda x: weibull_min.cdf(x, c, loc=0, scale=scale))
+            chi2_stat, chi2_p, df = pearson_chi2_test(values, 'weibull', (c, 0, scale), n_bins)
+            dist_info.append(f"Вейбулла розподіл:\nc={c:.4f} (±{std_err_c:.4f})\nscale={scale:.4f} (±{std_err_scale:.4f})\n"
+                            f"KS: стат={ks_stat:.4f}, p={ks_p:.4f}\n"
+                            f"Пірсон: χ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
+            ax.fill_between(x_theor, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1), 
+                            color=colors[idx % len(colors)], alpha=0.2)
+        
+        elif dist == 'uniform':
+            a, b = np.min(values), np.max(values)
+            cdf = uniform.cdf(x_theor, a, b - a)
+            ax.plot(x_theor, cdf, color=colors[idx % len(colors)], label=f'Рівномірний (a={a:.4f}, b={b:.4f})')
+            ks_stat, ks_p = kstest(values, 'uniform', args=(a, b - a))
+            chi2_stat, chi2_p, df = pearson_chi2_test(values, 'uniform', (a, b - a), n_bins)
+            dist_info.append(f"Рівномірний розподіл:\na={a:.4f}\nb={b:.4f}\n"
+                            f"KS: стат={ks_stat:.4f}, p={ks_p:.4f}\n"
+                            f"Пірсон: χ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
+            ax.fill_between(x_theor, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1), 
+                            color=colors[idx % len(colors)], alpha=0.2)
+        
+        elif dist == 'rayleigh':
+            mean = np.mean(values)
+            sigma = np.sqrt(2 / np.pi) * mean
+            cdf = 1 - np.exp(-x_theor**2 / (2 * sigma**2))
+            ax.plot(x_theor, cdf, color=colors[idx % len(colors)], label=f'Релея (σ={sigma:.4f})')
+            ks_stat, ks_p = kstest(values, lambda x: 1 - np.exp(-x**2 / (2 * sigma**2)))
+            chi2_stat, chi2_p, df = pearson_chi2_test(values, 'rayleigh', (sigma,), n_bins)
+            dist_info.append(f"Релея розподіл:\nσ={sigma:.4f} (±{sem(values)*np.sqrt(2/np.pi):.4f})\n"
+                            f"KS: стат={ks_stat:.4f}, p={ks_p:.4f}\n"
+                            f"Пірсон: χ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
+            ax.fill_between(x_theor, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1), 
+                            color=colors[idx % len(colors)], alpha=0.2)
+    
+    ax.set_title('Порівняння емпіричного та теоретичних розподілів')
+    ax.set_xlabel('Час очікування (хв)')
+    ax.set_ylabel('Ймовірність')
+    ax.legend()
+    ax.grid(True, linestyle='--', alpha=0.7)
+    ax.set_xlim(x_lower, x_upper)
+    ax.set_ylim(-0.05, 1.05)
+    
+    canvas = FigureCanvasTkAgg(fig, master=gui_objects['tab6'])
+    canvas.draw()
+    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    
+    info_text = "\n\n".join(dist_info)
+    info_frame = tk.Frame(gui_objects['tab6'])
+    info_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, padx=10, pady=10)
+    info_label = ttk.Label(info_frame, text=info_text, justify=tk.LEFT)
+    info_label.pack()
+
 def plot_distribution_functions():
     global values
     if len(values) == 0:
@@ -287,31 +455,27 @@ def plot_distribution_functions():
     
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Використовуємо кількість класів із bin_count_var
     n_bins = gui_objects['bin_count_var'].get()
     if n_bins == 0:
-        n_bins = int(np.sqrt(len(values)))  # Автоматичний вибір, якщо 0
+        n_bins = int(np.sqrt(len(values)))
     
     bin_dt, bin_gr = np.histogram(values, bins=n_bins)
     Y = np.cumsum(bin_dt) / len(values)
-    ###
-    # Початок з першого інтервалу, прибираємо вертикальний стрибок на початку
     for i in range(len(Y)):
         ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
     ax.plot([bin_gr[-1], bin_gr[-1]], [Y[-1], 1], color='green', linewidth=2)
-    ###
+    
     mean, std = np.mean(values), np.std(values)
     confidence = gui_objects['confidence_var'].get() / 100
     
     x_min, x_max = np.min(values), np.max(values)
     x_range = x_max - x_min if x_max != x_min else 1
-    x_margin = 0.1 * x_range
-    x_lower = x_min - x_margin
-    x_upper = x_max + x_margin
+    x_lower = x_min - 0.1 * x_range
+    x_upper = x_max + 0.1 * x_range
     
     x_theor = np.linspace(x_lower, x_upper, 1000)
     cdf = norm.cdf(x_theor, mean, std)
-    ax.plot(x_theor, cdf, label='Нормальний розподіл', color='red')
+    ax.plot(x_theor, cdf, label=f'Нормальний розподіл (μ={mean:.4f}, σ={std:.4f})', color='red')
     
     n = len(values)
     epsilon = np.sqrt(1/(2*n) * np.log(2/(1-confidence)))
@@ -332,20 +496,23 @@ def plot_distribution_functions():
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     
     ks_statistic, ks_pvalue = kstest(values, 'norm', args=(mean, std))
-    critical_value = np.sqrt(-0.5 * np.log((1 - confidence) / 2)) / np.sqrt(len(values))
+    chi2_stat, chi2_p, df = pearson_chi2_test(values, 'norm', (mean, std), n_bins)
+    critical_value = np.sqrt(-0.5 * np.log((1 - confidence) / 2)) / np.sqrt(n)
     conclusion = "Розподіл нормальний" if ks_statistic < critical_value else "Розподіл не нормальний"
-    ks_text = (f"Тест Колмогорова-Смірнова:\nСтатистика: {ks_statistic:.4f}\n"
-               f"Критичне значення: {critical_value:.4f}\np-значення: {ks_pvalue:.4f}\n"
-               f"Висновок: {conclusion}")
+    info_text = (f"Нормальний розподіл:\nμ={mean:.4f} (±{sem(values):.4f})\nσ={std:.4f}\n"
+                 f"Тест Колмогорова-Смірнова:\nСтатистика: {ks_statistic:.4f}\n"
+                 f"Критичне значення: {critical_value:.4f}\np-значення: {ks_pvalue:.4f}\n"
+                 f"Висновок: {conclusion}\n"
+                 f"Тест Пірсона:\nχ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
     info_frame = tk.Frame(gui_objects['tab2'])
     info_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, padx=10, pady=10)
-    info_label = ttk.Label(info_frame, text=ks_text, justify=tk.LEFT)
+    info_label = ttk.Label(info_frame, text=info_text, justify=tk.LEFT)
     info_label.pack()
 
 def plot_exponential_distribution():
     global values
     if len(values) == 0:
-        messagebox.showwarning("Попередження", "Немає даних для побудови імовірнісної сітки")
+        messagebox.showwarning("Попередження", "Немає даних для побудови експоненціального розподілу")
         return
     
     if np.any(values < 0):
@@ -360,11 +527,9 @@ def plot_exponential_distribution():
     sorted_values = np.sort(values)
     n = len(sorted_values)
     
-    # Обчислення емпіричних ймовірностей та y-значень
     empirical_probs = np.arange(1, n + 1) / (n + 1)
     y_values = -np.log(1 - empirical_probs)
     
-    # Нормалізація y-значень, щоб максимум був 1
     y_max = np.max(y_values)
     if y_max == 0:
         messagebox.showerror("Помилка", "Максимальне значення y дорівнює нулю. Неможливо нормалізувати.")
@@ -377,23 +542,20 @@ def plot_exponential_distribution():
         return
     lambda_param = 1 / mean
     
-    # Побудова точок даних із нормалізованими y-значеннями
     ax.scatter(sorted_values, y_values_normalized, color='green', label='Дані', s=50)
     
-    # Теоретична лінія (нормалізована)
     x_theor = np.linspace(0, np.max(sorted_values) * 1.2, 100)
     y_theor = lambda_param * x_theor
-    y_theor_normalized = y_theor / y_max  # Нормалізуємо теоретичну лінію
+    y_theor_normalized = y_theor / y_max
     ax.plot(x_theor, y_theor_normalized, color='blue', linestyle='--', label=f'Експоненціальний розподіл (λ={lambda_param:.4f})')
     
     x_min, x_max = np.min(values), np.max(values)
     x_range = x_max - x_min if x_max != x_min else 1
-    x_margin = 0.1 * x_range
-    x_lower = max(0, x_min - x_margin)
-    x_upper = x_max + x_margin
+    x_lower = max(0, x_min - 0.1 * x_range)
+    x_upper = x_max + 0.1 * x_range
     
     ax.set_xlim(x_lower, x_upper)
-    ax.set_ylim(0, 1)  # Встановлюємо межі y-осі від 0 до 1.2
+    ax.set_ylim(0, 1)
     
     ax.set_title('Імовірнісна сітка експоненціального розподілу')
     ax.set_xlabel('Значення (Час очікування, хв)')
@@ -406,15 +568,19 @@ def plot_exponential_distribution():
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     
     confidence = gui_objects['confidence_var'].get() / 100
+    n_bins = gui_objects['bin_count_var'].get() or int(np.sqrt(len(values)))
     ks_statistic, ks_pvalue = kstest(values, 'expon', args=(0, mean))
+    chi2_stat, chi2_p, df = pearson_chi2_test(values, 'expon', (0, mean), n_bins)
     critical_value = np.sqrt(-0.5 * np.log((1 - confidence) / 2)) / np.sqrt(len(values))
     conclusion = "Розподіл відповідає експоненціальному" if ks_statistic < critical_value else "Розподіл не відповідає експоненціальному"
-    ks_text = (f"Тест Колмогорова-Смірнова:\nСтатистика: {ks_statistic:.4f}\n"
-               f"Критичне значення: {critical_value:.4f}\np-значення: {ks_pvalue:.4f}\n"
-               f"Висновок: {conclusion}")
+    info_text = (f"Експоненціальний розподіл:\nλ={lambda_param:.4f} (±{1/(np.sqrt(n)*mean):.4f})\n"
+                 f"Тест Колмогорова-Смірнова:\nСтатистика: {ks_statistic:.4f}\n"
+                 f"Критичне значення: {critical_value:.4f}\np-значення: {ks_pvalue:.4f}\n"
+                 f"Висновок: {conclusion}\n"
+                 f"Тест Пірсона:\nχ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
     info_frame = tk.Frame(gui_objects['tab3'])
     info_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, padx=10, pady=10)
-    info_label = ttk.Label(info_frame, text=ks_text, justify=tk.LEFT)
+    info_label = ttk.Label(info_frame, text=info_text, justify=tk.LEFT)
     info_label.pack()
 
 def analyze_call_types():
@@ -458,16 +624,10 @@ def analyze_call_types():
             continue
         count = len(type_values)
         mean = np.mean(type_values)
-        median = np.median(type_values)
+        median = np.median(type_values)#########
         std = np.std(type_values, ddof=1)
         
-        char_table.insert("", "end", values=(
-            call_type, 
-            str(count), 
-            f"{mean:{fmt}}", 
-            f"{median:{fmt}}", 
-            f"{std:{fmt}}"
-        ))
+        char_table.insert("", "end", values=(call_type, str(count), f"{mean:{fmt}}", f"{median:{fmt}}", f"{std:{fmt}}"))
         
         if mean > 5:
             recommendations.append(f"Для типу '{call_type}': середній час очікування ({mean:.2f} хв) перевищує 5 хвилин. "
@@ -519,7 +679,7 @@ def standardize_data():
         messagebox.showerror("Помилка", "Стандартне відхилення дорівнює нулю. Неможливо стандартизувати.")
         return
     values = (values - mean) / std
-    call_types = np.array(['Невідомо'] * len(values))  # Скидаємо типи
+    call_types = np.array(['Невідомо'] * len(values))
     update_statistics()
     update_characteristics()
     update_data_box()
@@ -534,7 +694,7 @@ def log_transform():
         messagebox.showerror("Помилка", "Логарифмування можливе тільки для додатних значень")
         return
     values = np.log(values)
-    call_types = np.array(['Невідомо'] * len(values))  # Скидаємо типи
+    call_types = np.array(['Невідомо'] * len(values))
     update_statistics()
     update_characteristics()
     update_data_box()
@@ -548,7 +708,7 @@ def shift_data():
     shift_value = simpledialog.askfloat("Зсув даних", "Введіть значення зсуву:")
     if shift_value is not None:
         values = values + shift_value
-        call_types = np.array(['Невідомо'] * len(values))  # Скидаємо типи
+        call_types = np.array(['Невідомо'] * len(values))
         update_statistics()
         update_characteristics()
         update_data_box()
@@ -676,39 +836,32 @@ def plot_rayleigh_distribution():
     
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Обчислення гістограми для ECDF
     n_bins = gui_objects['bin_count_var'].get()
     if n_bins == 0:
-        n_bins = int(np.sqrt(len(values)))  # Автоматичний вибір, якщо 0
+        n_bins = int(np.sqrt(len(values)))
     bin_dt, bin_gr = np.histogram(values, bins=n_bins)
     Y = np.cumsum(bin_dt) / len(values)
-
-    # Побудова ступінчастої емпіричної функції розподілу
+    
     for i in range(len(Y)):
         ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
     ax.plot([bin_gr[-1], bin_gr[-1]], [Y[-1], 1], color='green', linewidth=2)
     
-    # Оцінка параметра σ за формулою з книги: σ = √(2/π) * E[ξ]
     mean = np.mean(values)
     sigma = np.sqrt(2 / np.pi) * mean
     
-    # Теоретична функція щільності розподілу Релея
     x_theor = np.linspace(0, np.max(values) * 1.2, 100)
     pdf_rayleigh = (x_theor / sigma**2) * np.exp(-x_theor**2 / (2 * sigma**2))
     ax.plot(x_theor, pdf_rayleigh, 'b-', label=f'Щільність Релея (σ={sigma:.4f})')
     
-    # Теоретична кумулятивна функція розподілу Релея
     cdf_rayleigh = 1 - np.exp(-x_theor**2 / (2 * sigma**2))
     ax.plot(x_theor, cdf_rayleigh, 'r-', label=f'Розподіл Релея (σ={sigma:.4f})')
     
-    # Довірчий інтервал
     confidence = gui_objects['confidence_var'].get() / 100
     n = len(values)
     epsilon = np.sqrt(-0.5 * np.log(1 - confidence) / n)
     ax.fill_between(x_theor, np.maximum(cdf_rayleigh - epsilon, 0), np.minimum(cdf_rayleigh + epsilon, 1), 
                     color='red', alpha=0.2, label='Довірчий інтервал')
     
-    # Налаштування графіка
     ax.set_title('Розподіл Релея та емпіричні дані')
     ax.set_xlabel('Час очікування (хв)')
     ax.set_ylabel('Ймовірність / Щільність')
@@ -722,33 +875,19 @@ def plot_rayleigh_distribution():
     canvas.draw()
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     
-    # Тест Колмогорова-Смірнова
     ks_statistic, ks_pvalue = kstest(values, lambda x: 1 - np.exp(-x**2 / (2 * sigma**2)), args=(), N=n)
+    chi2_stat, chi2_p, df = pearson_chi2_test(values, 'rayleigh', (sigma,), n_bins)
     critical_value = np.sqrt(-0.5 * np.log((1 - confidence) / 2)) / np.sqrt(n)
     conclusion = "Розподіл відповідає Релея" if ks_statistic < critical_value else "Розподіл не відповідає Релея"
-    ks_text = (f"Тест Колмогорова-Смірнова:\nСтатистика: {ks_statistic:.4f}\n"
-               f"Критичне значення: {critical_value:.4f}\n"
-               f"p-значення: {ks_pvalue:.4f}\n"
-               f"Висновок: {conclusion}")
+    info_text = (f"Релея розподіл:\nσ={sigma:.4f} (±{sem(values)*np.sqrt(2/np.pi):.4f})\n"
+                 f"Тест Колмогорова-Смірнова:\nСтатистика: {ks_statistic:.4f}\n"
+                 f"Критичне значення: {critical_value:.4f}\np-значення: {ks_pvalue:.4f}\n"
+                 f"Висновок: {conclusion}\n"
+                 f"Тест Пірсона:\nχ²={chi2_stat:.4f}, p={chi2_p:.4f}, df={df}")
     info_frame = tk.Frame(gui_objects['tab5'])
     info_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, padx=10, pady=10)
-    info_label = ttk.Label(info_frame, text=ks_text, justify=tk.LEFT)
+    info_label = ttk.Label(info_frame, text=info_text, justify=tk.LEFT)
     info_label.pack()
-    
-    # Додаткові характеристики
-    E_xi = mean
-    D_xi = (2 - np.pi / 2) * (sigma**2)
-    A_xi = 0.631
-    E_xi_excess = -0.245
-    char_text = (f"Характеристики:\nСереднє E[ξ] = {E_xi:.4f}\n"
-                 f"Дисперсія D[ξ] = {D_xi:.4f}\n"
-                 f"Асиметрія A = {A_xi:.4f}\n"
-                 f"Ексцес E = {E_xi_excess:.4f}\n"
-                 f"Параметр σ = {sigma:.4f}")
-    char_frame = tk.Frame(gui_objects['tab5'])
-    char_frame.pack(side=tk.BOTTOM, fill=tk.X, expand=False, padx=10, pady=10)
-    char_label = ttk.Label(char_frame, text=char_text, justify=tk.LEFT)
-    char_label.pack()
 
 def initialize_logic(objects):
     global gui_objects
@@ -767,4 +906,5 @@ def initialize_logic(objects):
     gui_objects['plot_btn'].config(command=plot_distribution_functions)
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)
     gui_objects['call_type_btn'].config(command=analyze_call_types)
-    gui_objects['refresh_graph_button'].config(command=update_histogram)
+    gui_objects['distributions_btn'].config(command=plot_all_distributions)
+    gui_objects['refresh_graph_button'].config(command=update_histogram) #########
