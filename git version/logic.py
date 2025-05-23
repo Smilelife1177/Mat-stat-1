@@ -355,7 +355,7 @@ def plot_all_distributions():
     
     x_theor = np.linspace(x_lower, x_upper, 1000)
     
-    distributions = gui_objects['distributions_var'].get().split(',')
+    distributions = [key for key, var in gui_objects['distributions'].items() if var.get()]
     colors = ['red', 'blue', 'purple', 'orange', 'cyan']
     dist_info = []
     

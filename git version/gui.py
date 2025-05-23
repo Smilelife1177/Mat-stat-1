@@ -67,11 +67,24 @@ def create_gui(root):
     precision_entry = tk.Entry(scrollable_frame, textvariable=precision_var)
     precision_entry.pack()
 
-    distributions_label = tk.Label(scrollable_frame, text="Оберіть розподіли (через кому: norm,expon,weibull,uniform,rayleigh):")
-    distributions_label.pack()
-    distributions_var = tk.StringVar(value="norm,expon,weibull,uniform,rayleigh")
-    distributions_entry = tk.Entry(scrollable_frame, textvariable=distributions_var)
-    distributions_entry.pack()
+    # Чек-бокси для вибору розподілів
+    dist_frame = ttk.LabelFrame(scrollable_frame, text="Оберіть розподіли для порівняння", padding=(5, 5))
+    dist_frame.pack(fill='x', pady=5)
+
+    distributions = {
+        'norm': tk.BooleanVar(value=True),
+        'expon': tk.BooleanVar(value=True),
+        'weibull': tk.BooleanVar(value=True),
+        'uniform': tk.BooleanVar(value=True),
+        'rayleigh': tk.BooleanVar(value=True)
+    }
+
+    # Додаємо чек-бокси
+    tk.Checkbutton(dist_frame, text="Нормальний", variable=distributions['norm']).pack(anchor='w')
+    tk.Checkbutton(dist_frame, text="Експоненціальний", variable=distributions['expon']).pack(anchor='w')
+    tk.Checkbutton(dist_frame, text="Вейбулла", variable=distributions['weibull']).pack(anchor='w')
+    tk.Checkbutton(dist_frame, text="Рівномірний", variable=distributions['uniform']).pack(anchor='w')
+    tk.Checkbutton(dist_frame, text="Релея", variable=distributions['rayleigh']).pack(anchor='w')
 
     bounds_frame = ttk.LabelFrame(scrollable_frame, text="Встановлення границь", padding=(5, 5))
     bounds_frame.pack(fill='x', pady=10)
@@ -191,6 +204,6 @@ def create_gui(root):
         'save_btn': save_btn,
         'confidence_var': confidence_var,
         'precision_var': precision_var,
-        'distributions_var': distributions_var,
+        'distributions': distributions,
         'refresh_graph_button': refresh_graph_button
     }
