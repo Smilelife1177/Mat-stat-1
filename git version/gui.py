@@ -86,27 +86,27 @@ def create_gui(root):
     tk.Checkbutton(dist_frame, text="Рівномірний", variable=distributions['uniform']).pack(anchor='w')
     tk.Checkbutton(dist_frame, text="Релея", variable=distributions['rayleigh']).pack(anchor='w')
 
-    bounds_frame = ttk.LabelFrame(scrollable_frame, text="Встановлення границь", padding=(5, 5))
-    bounds_frame.pack(fill='x', pady=10)
+    # bounds_frame = ttk.LabelFrame(scrollable_frame, text="Встановлення границь", padding=(5, 5))
+    # bounds_frame.pack(fill='x', pady=10)
 
-    lower_frame = tk.Frame(bounds_frame)
-    lower_frame.pack(fill='x', pady=2)
-    lower_label = tk.Label(lower_frame, text="Нижня границя:", width=15, anchor='w')
-    lower_label.pack(side=tk.LEFT)
-    lower_bound_var = tk.StringVar()
-    lower_entry = tk.Entry(lower_frame, textvariable=lower_bound_var)
-    lower_entry.pack(side=tk.LEFT, fill='x', expand=True)
+    # lower_frame = tk.Frame(bounds_frame)
+    # lower_frame.pack(fill='x', pady=2)
+    # lower_label = tk.Label(lower_frame, text="Нижня границя:", width=15, anchor='w')
+    # lower_label.pack(side=tk.LEFT)
+    # lower_bound_var = tk.StringVar()
+    # lower_entry = tk.Entry(lower_frame, textvariable=lower_bound_var)
+    # lower_entry.pack(side=tk.LEFT, fill='x', expand=True)
 
-    upper_frame = tk.Frame(bounds_frame)
-    upper_frame.pack(fill='x', pady=2)
-    upper_label = tk.Label(upper_frame, text="Верхня границя:", width=15, anchor='w')
-    upper_label.pack(side=tk.LEFT)
-    upper_bound_var = tk.StringVar()
-    upper_entry = tk.Entry(upper_frame, textvariable=upper_bound_var)
-    upper_entry.pack(side=tk.LEFT, fill='x', expand=True)
+    # upper_frame = tk.Frame(bounds_frame)
+    # upper_frame.pack(fill='x', pady=2)
+    # upper_label = tk.Label(upper_frame, text="Верхня границя:", width=15, anchor='w')
+    # upper_label.pack(side=tk.LEFT)
+    # upper_bound_var = tk.StringVar()
+    # upper_entry = tk.Entry(upper_frame, textvariable=upper_bound_var)
+    # upper_entry.pack(side=tk.LEFT, fill='x', expand=True)
 
-    apply_bounds_btn = tk.Button(bounds_frame, text="Застосувати границі")
-    apply_bounds_btn.pack(fill=tk.X, pady=5)
+    # apply_bounds_btn = tk.Button(bounds_frame, text="Застосувати границі")
+    # apply_bounds_btn.pack(fill=tk.X, pady=5)
 
     edit_frame = ttk.LabelFrame(scrollable_frame, text="Редагування даних", padding=(5, 5))
     edit_frame.pack(fill='x', pady=10)
@@ -126,7 +126,7 @@ def create_gui(root):
     reset_btn = tk.Button(edit_frame, text="Скинути дані", state=tk.DISABLED)
     reset_btn.pack(fill=tk.X, pady=2)
 
-    editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, reset_btn, apply_bounds_btn]
+    editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, reset_btn]
 
     plot_btn = tk.Button(scrollable_frame, text="Побудувати нормальний розподіл", state=tk.DISABLED)
     plot_btn.pack(fill=tk.X, pady=5)
@@ -173,37 +173,33 @@ def create_gui(root):
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
     return {
-        'bin_count_var': bin_count_var,
-        'info_text': info_text,
-        'lower_bound_var': lower_bound_var,
-        'upper_bound_var': upper_bound_var,
-        'editing_buttons': editing_buttons,
-        'plot_btn': plot_btn,
-        'cdf_btn': cdf_btn,
-        'call_type_btn': call_type_btn,
-        'rayleigh_btn': rayleigh_btn,
-        'distributions_btn': distributions_btn,
-        'char_table': char_table,
-        'data_box': data_box,
-        'fig': fig,
-        'hist_ax': hist_ax,
-        'hist_canvas': hist_canvas,
-        'tab2': tab2,
-        'tab3': tab3,
-        'tab4': tab4,
-        'tab5': tab5,
-        'tab6': tab6,
-        'load_button': load_button,
-        'update_button': update_button,
-        'apply_bounds_btn': apply_bounds_btn,
-        'standardize_btn': standardize_btn,
-        'log_btn': log_btn,
-        'shift_btn': shift_btn,
-        'outliers_btn': outliers_btn,
-        'reset_btn': reset_btn,
-        'save_btn': save_btn,
-        'confidence_var': confidence_var,
-        'precision_var': precision_var,
-        'distributions': distributions,
-        'refresh_graph_button': refresh_graph_button
-    }
+    'bin_count_var': bin_count_var,
+    'info_text': info_text,
+    'editing_buttons': editing_buttons,
+    'plot_btn': plot_btn,
+    'cdf_btn': cdf_btn,
+    'call_type_btn': call_type_btn,
+    'rayleigh_btn': rayleigh_btn,
+    'distributions_btn': distributions_btn,
+    'char_table': char_table,
+    'data_box': data_box,
+    'fig': fig,
+    'hist_ax': hist_ax,
+    'hist_canvas': hist_canvas,
+    'tab2': tab2,
+    'tab3': tab3,
+    'tab4': tab4,
+    'tab5': tab5,
+    'tab6': tab6,
+    'load_button': load_button,
+    'update_button': update_button,
+    'standardize_btn': standardize_btn,
+    'log_btn': log_btn,
+    'shift_btn': shift_btn,
+    'outliers_btn': outliers_btn,
+    'reset_btn': reset_btn,
+    'save_btn': save_btn,
+    'confidence_var': confidence_var,
+    'precision_var': precision_var,
+    'distributions': distributions
+}

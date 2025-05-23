@@ -216,11 +216,8 @@ def load_data():
         gui_objects['cdf_btn'].config(state=tk.NORMAL)
         gui_objects['call_type_btn'].config(state=tk.NORMAL)
         gui_objects['rayleigh_btn'].config(state=tk.NORMAL)
-        gui_objects['distributions_btn'].config(state=tk.NORMAL)  # Активація нової кнопки
-        min_val, max_val = np.min(values), np.max(values)
-        gui_objects['lower_bound_var'].set(str(min_val))
-        gui_objects['upper_bound_var'].set(str(max_val))
-        
+        gui_objects['distributions_btn'].config(state=tk.NORMAL)
+
         mean_wait_time = np.mean(values)
         recommendation = ("Рекомендується збільшити кількість операторів у пікові години, "
                         "а також розглянути впровадження IVR для автоматичних відповідей.") if mean_wait_time > 5 else "Поточна кількість операторів достатня."
@@ -779,29 +776,29 @@ def remove_outliers():
     else:
         messagebox.showinfo("Видалення викидів", "Жодних викидів не видалено")
 
-def apply_bounds():
-    global values, call_types
-    if len(values) == 0:
-        messagebox.showwarning("Попередження", "Немає даних для застосування границь")
-        return
-    try:
-        lower = float(gui_objects['lower_bound_var'].get())
-        upper = float(gui_objects['upper_bound_var'].get())
-        if lower >= upper:
-            messagebox.showerror("Помилка", "Нижня границя має бути менше верхньої")
-            return
-        mask = (values >= lower) & (values <= upper)
-        if not np.any(mask):
-            messagebox.showerror("Помилка", "За вказаними границями немає даних")
-            return
-        values = values[mask]
-        call_types = call_types[mask]
-        update_statistics()
-        update_characteristics()
-        update_data_box()
-        messagebox.showinfo("Границі", f"Застосовано границі: [{lower:.4f}, {upper:.4f}]")
-    except ValueError:
-        messagebox.showerror("Помилка", "Введіть числові значення для границь")
+# def apply_bounds():
+#     global values, call_types
+#     if len(values) == 0:
+#         messagebox.showwarning("Попередження", "Немає даних для застосування границь")
+#         return
+#     try:
+#         lower = float(gui_objects['lower_bound_var'].get())
+#         upper = float(gui_objects['upper_bound_var'].get())
+#         if lower >= upper:
+#             messagebox.showerror("Помилка", "Нижня границя має бути менше верхньої")
+#             return
+#         mask = (values >= lower) & (values <= upper)
+#         if not np.any(mask):
+#             messagebox.showerror("Помилка", "За вказаними границями немає даних")
+#             return
+#         values = values[mask]
+#         call_types = call_types[mask]
+#         update_statistics()
+#         update_characteristics()
+#         update_data_box()
+#         messagebox.showinfo("Границі", f"Застосовано границі: [{lower:.4f}, {upper:.4f}]")
+#     except ValueError:
+#         messagebox.showerror("Помилка", "Введіть числові значення для границь")
 
 def reset_data():
     global values, original_values, call_types, original_call_types
@@ -811,9 +808,9 @@ def reset_data():
     
     values = original_values.copy()
     call_types = original_call_types.copy()
-    min_val, max_val = np.min(values), np.max(values)
-    gui_objects['lower_bound_var'].set(str(min_val))
-    gui_objects['upper_bound_var'].set(str(max_val))
+    # min_val, max_val = np.min(values), np.max(values)
+    # gui_objects['lower_bound_var'].set(str(min_val))
+    # gui_objects['upper_bound_var'].set(str(max_val))
     update_statistics()
     update_characteristics()
     update_data_box()
@@ -897,7 +894,7 @@ def initialize_logic(objects):
     gui_objects['data_box'].bind('<FocusOut>', update_from_data_box)
     gui_objects['load_button'].config(command=load_data)
     gui_objects['update_button'].config(command=update_histogram)
-    gui_objects['apply_bounds_btn'].config(command=apply_bounds)
+    # gui_objects['apply_bounds_btn'].config(command=apply_bounds)
     gui_objects['standardize_btn'].config(command=standardize_data)
     gui_objects['log_btn'].config(command=log_transform)
     gui_objects['shift_btn'].config(command=shift_data)
@@ -907,4 +904,4 @@ def initialize_logic(objects):
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)
     gui_objects['call_type_btn'].config(command=analyze_call_types)
     gui_objects['distributions_btn'].config(command=plot_all_distributions)
-    gui_objects['refresh_graph_button'].config(command=update_histogram) #########
+    # gui_objects['refresh_graph_button'].config(command=update_histogram) #########
