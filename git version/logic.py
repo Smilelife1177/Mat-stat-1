@@ -650,14 +650,33 @@ def update_distribution_plot():
             m = int(np.cbrt(n))
             bin_count = m if m % 2 != 0 else m - 1
     
-    hist, bins, _ = gui_objects['ax_dist'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
+    hist, bins, _ = gui_objects['ax_dist'].hist(values, bins=bin_count, color='green', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
     
     # Нормальний розподіл
+    max_density = np.max(hist)  # Для масштабування осі Y
     if gui_objects['normal_var'].get():
         mean, std = np.mean(values), np.std(values)
         x = np.linspace(min(values), max(values), 100)
         density = norm.pdf(x, mean, std)
         gui_objects['ax_dist'].plot(x, density, 'r-', label='Нормальний розподіл')
+        max_density = max(max_density, np.max(density))
+    
+    # Експоненціальний розподіл
+    if gui_objects['exponential_var'].get():
+        if np.any(values < 0):
+            messagebox.showerror("Помилка", "Експоненціальний розподіл можливий лише для невід'ємних значень")
+            gui_objects['exponential_var'].set(False)
+        else:
+            mean = np.mean(values)
+            if mean == 0:
+                messagebox.showerror("Помилка", "Середнє значення дорівнює нулю. Неможливо оцінити параметр.")
+                gui_objects['exponential_var'].set(False)
+            else:
+                lambda_param = 1 / mean
+                x = np.linspace(0, max(values), 100)
+                density = expon.pdf(x, scale=mean)
+                gui_objects['ax_dist'].plot(x, density, 'r-', label='Експоненціальний розподіл')
+                max_density = max(max_density, np.max(density))
     
     gui_objects['ax_dist'].set_title('Гістограма та розподіли')
     gui_objects['ax_dist'].set_xlabel('Час затримки (сек)')
@@ -668,8 +687,7 @@ def update_distribution_plot():
     x_range = x_max - x_min if x_max != x_min else 1
     gui_objects['ax_dist'].set_xlim(x_min - 0.1 * x_range, x_max + 0.1 * x_range)
     
-    y_max = max(np.max(hist), 0.5) if gui_objects['normal_var'].get() else np.max(hist)
-    gui_objects['ax_dist'].set_ylim(0, y_max * 1.1)
+    gui_objects['ax_dist'].set_ylim(0, max_density * 1.1)
     
     gui_objects['dist_canvas'].draw()
 

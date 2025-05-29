@@ -135,6 +135,10 @@ def create_gui(root):
     normal_check = tk.Checkbutton(control_frame, text="Нормальний розподіл", variable=normal_var)
     normal_check.pack(side=tk.LEFT, padx=5)
 
+    exponential_var = tk.BooleanVar(value=False)
+    exponential_check = tk.Checkbutton(control_frame, text="Експоненціальний розподіл", variable=exponential_var)
+    exponential_check.pack(side=tk.LEFT, padx=5)
+
     update_graph_btn = tk.Button(control_frame, text="Оновити графік")
     update_graph_btn.pack(side=tk.LEFT, padx=5)
 
@@ -157,7 +161,7 @@ def create_gui(root):
         'tab2': tab2,
         'tab3': tab3,
         'tab4': tab4,
-        'tab5': tab5,  # Додаємо нову вкладку
+        'tab5': tab5,
         'load_button': load_button,
         'update_button': update_button,
         'standardize_btn': standardize_btn,
@@ -169,9 +173,10 @@ def create_gui(root):
         'confidence_var': confidence_var,
         'precision_var': precision_var,
         'refresh_graph_button': refresh_graph_button,
-        'normal_var': normal_var,  # Додаємо змінну для чекбоксу
-        'update_graph_btn': update_graph_btn,  # Додаємо кнопку оновлення
-        'fig_dist': fig_dist,  # Додаємо нову фігуру
-        'ax_dist': ax_dist,  # Додаємо нову вісь
-        'dist_canvas': dist_canvas  # Додаємо нове полотно
+        'normal_var': normal_var,
+        'exponential_var': exponential_var,  # Додаємо змінну для експоненціального чекбоксу
+        'update_graph_btn': update_graph_btn,
+        'fig_dist': fig_dist,
+        'ax_dist': ax_dist,
+        'dist_canvas': dist_canvas
     }
