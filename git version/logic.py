@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon
+from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon, weibull_min, rayleigh, chi2_contingency
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -635,9 +635,12 @@ def reset_data():
 def update_distribution_plot():
     global values
     if len(values) == 0:
+        gui_objects['results_text'].delete(1.0, tk.END)
+        gui_objects['results_text'].insert(tk.END, "Немає даних для аналізу.\n")
         return
     
     gui_objects['ax_dist'].clear()
+    gui_objects['results_text'].delete(1.0, tk.END)
     
     # Гістограма
     bin_count = gui_objects['bin_count_var'].get()
@@ -650,7 +653,21 @@ def update_distribution_plot():
             m = int(np.cbrt(n))
             bin_count = m if m % 2 != 0 else m - 1
     
-    hist, bins, _ = gui_objects['ax_dist'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
+    hist, bins, _ = gui_objects['ax_dist'].hist(values, bins=bin_count, color='green', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
+    
+    # Обчислення емпіричної функції розподілу (ECDF)
+    sorted_values = np.sort(values)
+    n = len(values)
+    ecdf = np.arange(1, n + 1) / n
+    
+    # Довірчий інтервал для теоретичної функції розподілу (DKW)
+    confidence = gui_objects['confidence_var'].get() / 100
+    epsilon = np.sqrt(-0.5 * np.log((1 - confidence) / 2) / n)
+    
+    # Підготовка тексту для результатів
+    results = []
+    precision = gui_objects['precision_var'].get()
+    fmt = f".{precision}f"
     
     # Нормальний розподіл
     max_density = np.max(hist)  # Для масштабування осі Y
@@ -660,6 +677,42 @@ def update_distribution_plot():
         density = norm.pdf(x, mean, std)
         gui_objects['ax_dist'].plot(x, density, 'r-', label='Нормальний розподіл')
         max_density = max(max_density, np.max(density))
+        
+        # Оцінка параметрів
+        mean_se = std / np.sqrt(n)  # Стандартна похибка середнього
+        std_se = std / np.sqrt(2 * (n - 1))  # Приблизно для стандартного відхилення
+        results.append("Нормальний розподіл:")
+        results.append(f"  Оцінка параметрів:")
+        results.append(f"    Середнє (μ) = {mean:{fmt}} ± {mean_se:{fmt}}")
+        results.append(f"    Стд. відхилення (σ) = {std:{fmt}} ± {std_se:{fmt}}")
+        
+        # Довірчий інтервал для CDF
+        cdf = norm.cdf(sorted_values, mean, std)
+        results.append(f"  Довірчий інтервал для CDF (рівень довіри {confidence*100}%):")
+        results.append(f"    Емпіричний CDF ± {epsilon:{fmt}}")
+        
+        # Критерії згоди
+        # KS тест
+        ks_stat, ks_p = kstest(values, 'norm', args=(mean, std))
+        ks_critical = np.sqrt(-0.5 * np.log((1 - confidence) / 2) / n)
+        ks_conclusion = "нормальний" if ks_stat < ks_critical else "не нормальний"
+        results.append(f"  Критерій Колмогорова-Смірнова:")
+        results.append(f"    Статистика: {ks_stat:{fmt}}, Критичне значення: {ks_critical:{fmt}}, p-значення: {ks_p:{fmt}}")
+        results.append(f"    Висновок: розподіл {ks_conclusion}")
+        
+        # Пірсон (χ² тест)
+        bin_counts, bin_edges = np.histogram(values, bins=bin_count, density=False)
+        expected_probs = np.diff(norm.cdf(bin_edges, mean, std))
+        expected = expected_probs * n
+        # Уникаємо нульових очікуваних частот
+        expected = np.where(expected < 5, 5, expected)
+        bin_counts = bin_counts[:len(expected)]
+        chi2_stat, chi2_p, _, _ = chi2_contingency([bin_counts, expected])
+        chi2_critical = chi2.ppf(confidence, len(bin_counts) - 1 - 2)  # 2 параметри (mean, std)
+        chi2_conclusion = "нормальний" if chi2_stat < chi2_critical else "не нормальний"
+        results.append(f"  Критерій Пірсона (χ²):")
+        results.append(f"    Статистика: {chi2_stat:{fmt}}, Критичне значення: {chi2_critical:{fmt}}, p-значення: {chi2_p:{fmt}}")
+        results.append(f"    Висновок: розподіл {chi2_conclusion}\n")
     
     # Експоненціальний розподіл
     if gui_objects['exponential_var'].get():
@@ -677,44 +730,167 @@ def update_distribution_plot():
                 density = expon.pdf(x, scale=mean)
                 gui_objects['ax_dist'].plot(x, density, 'b-', label='Експоненціальний розподіл')
                 max_density = max(max_density, np.max(density))
+                
+                # Оцінка параметрів
+                lambda_se = lambda_param / np.sqrt(n)  # Стандартна похибка для λ
+                results.append("Експоненціальний розподіл:")
+                results.append(f"  Оцінка параметрів:")
+                results.append(f"    λ = {lambda_param:{fmt}} ± {lambda_se:{fmt}}")
+                
+                # Довірчий інтервал для CDF
+                cdf = expon.cdf(sorted_values, scale=mean)
+                results.append(f"  Довірчий інтервал для CDF (рівень довіри {confidence*100}%):")
+                results.append(f"    Емпіричний CDF ± {epsilon:{fmt}}")
+                
+                # Критерії згоди
+                # KS тест
+                ks_stat, ks_p = kstest(values, 'expon', args=(0, mean))
+                ks_conclusion = "експоненціальний" if ks_stat < ks_critical else "не експоненціальний"
+                results.append(f"  Критерій Колмогорова-Смірнова:")
+                results.append(f"    Статистика: {ks_stat:{fmt}}, Критичне значення: {ks_critical:{fmt}}, p-значення: {ks_p:{fmt}}")
+                results.append(f"    Висновок: розподіл {ks_conclusion}")
+                
+                # Пірсон (χ² тест)
+                expected_probs = np.diff(expon.cdf(bin_edges, scale=mean))
+                expected = expected_probs * n
+                expected = np.where(expected < 5, 5, expected)
+                bin_counts = bin_counts[:len(expected)]
+                chi2_stat, chi2_p, _, _ = chi2_contingency([bin_counts, expected])
+                chi2_critical = chi2.ppf(confidence, len(bin_counts) - 1 - 1)  # 1 параметр (scale)
+                chi2_conclusion = "експоненціальний" if chi2_stat < chi2_critical else "не експоненціальний"
+                results.append(f"  Критерій Пірсона (χ²):")
+                results.append(f"    Статистика: {chi2_stat:{fmt}}, Критичне значення: {chi2_critical:{fmt}}, p-значення: {chi2_p:{fmt}}")
+                results.append(f"    Висновок: розподіл {chi2_conclusion}\n")
     
     # Розподіл Вейбулла
-    from scipy.stats import weibull_min
     if gui_objects['weibull_var'].get():
         if np.any(values < 0):
             messagebox.showerror("Помилка", "Розподіл Вейбулла можливий лише для невід'ємних значень")
             gui_objects['weibull_var'].set(False)
         else:
-            shape, loc, scale = weibull_min.fit(values, floc=0)  # Фіксуємо loc=0 для відповідності даним
+            shape, loc, scale = weibull_min.fit(values, floc=0)
             x = np.linspace(0, max(values), 100)
             density = weibull_min.pdf(x, shape, loc=loc, scale=scale)
             gui_objects['ax_dist'].plot(x, density, 'm-', label='Розподіл Вейбулла')
             max_density = max(max_density, np.max(density))
+            
+            # Оцінка параметрів (без точної похибки, оскільки складно аналітично)
+            results.append("Розподіл Вейбулла:")
+            results.append(f"  Оцінка параметрів:")
+            results.append(f"    Форма (k) = {shape:{fmt}}")
+            results.append(f"    Масштаб (λ) = {scale:{fmt}}")
+            
+            # Довірчий інтервал для CDF
+            cdf = weibull_min.cdf(sorted_values, shape, loc=loc, scale=scale)
+            results.append(f"  Довірчий інтервал для CDF (рівень довіри {confidence*100}%):")
+            results.append(f"    Емпіричний CDF ± {epsilon:{fmt}}")
+            
+            # Критерії згоди
+            # KS тест
+            ks_stat, ks_p = kstest(values, weibull_min.cdf, args=(shape, loc, scale))
+            ks_conclusion = "Вейбулла" if ks_stat < ks_critical else "не Вейбулла"
+            results.append(f"  Критерій Колмогорова-Смірнова:")
+            results.append(f"    Статистика: {ks_stat:{fmt}}, Критичне значення: {ks_critical:{fmt}}, p-значення: {ks_p:{fmt}}")
+            results.append(f"    Висновок: розподіл {ks_conclusion}")
+            
+            # Пірсон (χ² тест)
+            expected_probs = np.diff(weibull_min.cdf(bin_edges, shape, loc, scale))
+            expected = expected_probs * n
+            expected = np.where(expected < 5, 5, expected)
+            bin_counts = bin_counts[:len(expected)]
+            chi2_stat, chi2_p, _, _ = chi2_contingency([bin_counts, expected])
+            chi2_critical = chi2.ppf(confidence, len(bin_counts) - 1 - 2)  # 2 параметри (shape, scale)
+            chi2_conclusion = "Вейбулла" if chi2_stat < chi2_critical else "не Вейбулла"
+            results.append(f"  Критерій Пірсона (χ²):")
+            results.append(f"    Статистика: {chi2_stat:{fmt}}, Критичне значення: {chi2_critical:{fmt}}, p-значення: {chi2_p:{fmt}}")
+            results.append(f"    Висновок: розподіл {chi2_conclusion}\n")
     
     # Рівномірний розподіл
     if gui_objects['uniform_var'].get():
         x_min, x_max = np.min(values), np.max(values)
         if x_max == x_min:
-            x_max += 1  # Уникаємо ділення на нуль
+            x_max += 1
         range_width = x_max - x_min
         uniform_density = 1 / range_width if range_width > 0 else 0
         x = np.linspace(x_min, x_max, 100)
         gui_objects['ax_dist'].plot(x, [uniform_density] * len(x), 'c-', label='Рівномірний розподіл')
         max_density = max(max_density, uniform_density)
+        
+        # Оцінка параметрів
+        range_se = (x_max - x_min) / np.sqrt(12 * n)  # Приблизно для рівномірного
+        results.append("Рівномірний розподіл:")
+        results.append(f"  Оцінка параметрів:")
+        results.append(f"    a = {x_min:{fmt}}, b = {x_max:{fmt}}")
+        results.append(f"    Довжина інтервалу (b-a) = {range_width:{fmt}} ± {range_se:{fmt}}")
+        
+        # Довірчий інтервал для CDF
+        from scipy.stats import uniform
+        cdf = uniform.cdf(sorted_values, loc=x_min, scale=range_width)
+        results.append(f"  Довірчий інтервал для CDF (рівень довіри {confidence*100}%):")
+        results.append(f"    Емпіричний CDF ± {epsilon:{fmt}}")
+        
+        # Критерії згоди
+        # KS тест
+        ks_stat, ks_p = kstest(values, uniform.cdf, args=(x_min, range_width))
+        ks_conclusion = "рівномірний" if ks_stat < ks_critical else "не рівномірний"
+        results.append(f"  Критерій Колмогорова-Смірнова:")
+        results.append(f"    Статистика: {ks_stat:{fmt}}, Критичне значення: {ks_critical:{fmt}}, p-значення: {ks_p:{fmt}}")
+        results.append(f"    Висновок: розподіл {ks_conclusion}")
+        
+        # Пірсон (χ² тест)
+        expected_probs = np.diff(uniform.cdf(bin_edges, loc=x_min, scale=range_width))
+        expected = expected_probs * n
+        expected = np.where(expected < 5, 5, expected)
+        bin_counts = bin_counts[:len(expected)]
+        chi2_stat, chi2_p, _, _ = chi2_contingency([bin_counts, expected])
+        chi2_critical = chi2.ppf(confidence, len(bin_counts) - 1 - 2)  # 2 параметри (a, b)
+        chi2_conclusion = "рівномірний" if chi2_stat < chi2_critical else "не рівномірний"
+        results.append(f"  Критерій Пірсона (χ²):")
+        results.append(f"    Статистика: {chi2_stat:{fmt}}, Критичне значення: {chi2_critical:{fmt}}, p-значення: {chi2_p:{fmt}}")
+        results.append(f"    Висновок: розподіл {chi2_conclusion}\n")
     
     # Розподіл Релея
-    from scipy.stats import rayleigh
     if gui_objects['rayleigh_var'].get():
         if np.any(values < 0):
             messagebox.showerror("Помилка", "Розподіл Релея можливий лише для невід'ємних значень")
             gui_objects['rayleigh_var'].set(False)
         else:
-            # Оцінюємо параметр sigma для розподілу Релея
-            sigma = np.sqrt(np.mean(values**2) / 2)  # sigma = sqrt(E[X^2]/2) для Релея
+            sigma = np.sqrt(np.mean(values**2) / 2)
             x = np.linspace(0, max(values), 100)
             density = rayleigh.pdf(x, scale=sigma)
             gui_objects['ax_dist'].plot(x, density, 'y-', label='Розподіл Релея')
             max_density = max(max_density, np.max(density))
+            
+            # Оцінка параметрів
+            sigma_se = sigma / np.sqrt(2 * n)  # Приблизно для σ
+            results.append("Розподіл Релея:")
+            results.append(f"  Оцінка параметрів:")
+            results.append(f"    σ = {sigma:{fmt}} ± {sigma_se:{fmt}}")
+            
+            # Довірчий інтервал для CDF
+            cdf = rayleigh.cdf(sorted_values, scale=sigma)
+            results.append(f"  Довірчий інтервал для CDF (рівень довіри {confidence*100}%):")
+            results.append(f"    Емпіричний CDF ± {epsilon:{fmt}}")
+            
+            # Критерії згоди
+            # KS тест
+            ks_stat, ks_p = kstest(values, rayleigh.cdf, args=(0, sigma))
+            ks_conclusion = "Релея" if ks_stat < ks_critical else "не Релея"
+            results.append(f"  Критерій Колмогорова-Смірнова:")
+            results.append(f"    Статистика: {ks_stat:{fmt}}, Критичне значення: {ks_critical:{fmt}}, p-значення: {ks_p:{fmt}}")
+            results.append(f"    Висновок: розподіл {ks_conclusion}")
+            
+            # Пірсон (χ² тест)
+            expected_probs = np.diff(rayleigh.cdf(bin_edges, scale=sigma))
+            expected = expected_probs * n
+            expected = np.where(expected < 5, 5, expected)
+            bin_counts = bin_counts[:len(expected)]
+            chi2_stat, chi2_p, _, _ = chi2_contingency([bin_counts, expected])
+            chi2_critical = chi2.ppf(confidence, len(bin_counts) - 1 - 1)  # 1 параметр (sigma)
+            chi2_conclusion = "Релея" if chi2_stat < chi2_critical else "не Релея"
+            results.append(f"  Критерій Пірсона (χ²):")
+            results.append(f"    Статистика: {chi2_stat:{fmt}}, Критичне значення: {chi2_critical:{fmt}}, p-значення: {chi2_p:{fmt}}")
+            results.append(f"    Висновок: розподіл {chi2_conclusion}\n")
     
     gui_objects['ax_dist'].set_title('Гістограма та розподіли')
     gui_objects['ax_dist'].set_xlabel('Час затримки (сек)')
@@ -728,6 +904,9 @@ def update_distribution_plot():
     gui_objects['ax_dist'].set_ylim(0, max_density * 1.1)
     
     gui_objects['dist_canvas'].draw()
+    
+    # Виводимо результати в текстове поле
+    gui_objects['results_text'].insert(tk.END, "\n".join(results))
 
 def initialize_logic(objects):
     global gui_objects

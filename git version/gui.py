@@ -159,6 +159,16 @@ def create_gui(root):
     dist_canvas = FigureCanvasTkAgg(fig_dist, master=tab5)
     dist_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
+    # Фрейм для відображення результатів на вкладці 5
+    results_frame = ttk.LabelFrame(tab5, text="Результати аналізу", padding=(5, 5))
+    results_frame.pack(fill='both', expand=True, pady=5)
+
+    results_text = tk.Text(results_frame, height=15, width=80, wrap=tk.WORD)
+    results_text.pack(fill='both', expand=True)
+    results_scroll = tk.Scrollbar(results_text, command=results_text.yview)
+    results_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+    results_text.config(yscrollcommand=results_scroll.set)
+
     return {
         'bin_count_var': bin_count_var,
         'info_text': info_text,
@@ -190,9 +200,10 @@ def create_gui(root):
         'exponential_var': exponential_var,
         'weibull_var': weibull_var,
         'uniform_var': uniform_var,
-        'rayleigh_var': rayleigh_var,  # Додаємо змінну для розподілу Релея
+        'rayleigh_var': rayleigh_var,
         'update_graph_btn': update_graph_btn,
         'fig_dist': fig_dist,
         'ax_dist': ax_dist,
-        'dist_canvas': dist_canvas
+        'dist_canvas': dist_canvas,
+        'results_text': results_text  # Додаємо текстове поле для результатів
     }
