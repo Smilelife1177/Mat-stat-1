@@ -8,17 +8,19 @@ def create_gui(root):
     notebook = ttk.Notebook(root)
     notebook.pack(fill='both', expand=True)
 
-    # Створюємо чотири вкладки
+    # Створюємо п'ять вкладок (додаємо нову вкладку)
     tab1 = ttk.Frame(notebook)
     tab2 = ttk.Frame(notebook)
     tab3 = ttk.Frame(notebook)
     tab4 = ttk.Frame(notebook)
+    tab5 = ttk.Frame(notebook)  # Нова вкладка для гістограми та розподілів
 
     # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
     notebook.add(tab2, text='Функції розподілу')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab4, text='Аналіз за типами')
+    notebook.add(tab5, text='Гістограма та розподіли')
 
     # Вкладка 1: Основний аналіз
     canvas = tk.Canvas(tab1)
@@ -125,6 +127,21 @@ def create_gui(root):
     hist_canvas = FigureCanvasTkAgg(fig, master=tab1)
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
+    # Нова вкладка 5: Гістограма та розподіли
+    control_frame = ttk.Frame(tab5)
+    control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+    normal_var = tk.BooleanVar(value=True)
+    normal_check = tk.Checkbutton(control_frame, text="Нормальний розподіл", variable=normal_var)
+    normal_check.pack(side=tk.LEFT, padx=5)
+
+    update_graph_btn = tk.Button(control_frame, text="Оновити графік")
+    update_graph_btn.pack(side=tk.LEFT, padx=5)
+
+    fig_dist, ax_dist = plt.subplots(figsize=(10, 6))
+    dist_canvas = FigureCanvasTkAgg(fig_dist, master=tab5)
+    dist_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
     return {
         'bin_count_var': bin_count_var,
         'info_text': info_text,
@@ -140,6 +157,7 @@ def create_gui(root):
         'tab2': tab2,
         'tab3': tab3,
         'tab4': tab4,
+        'tab5': tab5,  # Додаємо нову вкладку
         'load_button': load_button,
         'update_button': update_button,
         'standardize_btn': standardize_btn,
@@ -150,5 +168,10 @@ def create_gui(root):
         'save_btn': save_btn,
         'confidence_var': confidence_var,
         'precision_var': precision_var,
-        'refresh_graph_button': refresh_graph_button
+        'refresh_graph_button': refresh_graph_button,
+        'normal_var': normal_var,  # Додаємо змінну для чекбоксу
+        'update_graph_btn': update_graph_btn,  # Додаємо кнопку оновлення
+        'fig_dist': fig_dist,  # Додаємо нову фігуру
+        'ax_dist': ax_dist,  # Додаємо нову вісь
+        'dist_canvas': dist_canvas  # Додаємо нове полотно
     }

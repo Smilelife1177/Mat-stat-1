@@ -51,6 +51,7 @@ def update_from_data_box(event=None):
             update_statistics()
             update_characteristics()
             update_data_box()
+            update_distribution_plot()  # Оновлюємо графік розподілів
         else:
             print("Дані не змінилися, пропускаємо оновлення.")
     except ValueError as e:
@@ -135,6 +136,7 @@ def update_data_box():
     formatted_values = ', '.join([f"{val:.4f}" for val in values])
     gui_objects['data_box'].insert(tk.END, formatted_values)
     update_histogram()
+    update_distribution_plot()  # Оновлюємо графік розподілів
 
 def load_data():
     global values, original_values, call_types, original_call_types
@@ -610,6 +612,7 @@ def remove_outliers():
         update_characteristics()
         update_data_box()
         update_histogram()
+        update_distribution_plot()
         messagebox.showinfo("Видалення викидів", f"Видалено {removed_count} викидів")
     else:
         messagebox.showinfo("Видалення викидів", "Жодних викидів не видалено")
@@ -629,6 +632,47 @@ def reset_data():
         widget.destroy()
     messagebox.showinfo("Скидання", "Дані повернуто до початкового стану")
 
+def update_distribution_plot():
+    global values
+    if len(values) == 0:
+        return
+    
+    gui_objects['ax_dist'].clear()
+    
+    # Гістограма
+    bin_count = gui_objects['bin_count_var'].get()
+    if bin_count == 0:
+        n = len(values)
+        if n < 100:
+            m = int(np.sqrt(n))
+            bin_count = m if m % 2 != 0 else m - 1
+        else:
+            m = int(np.cbrt(n))
+            bin_count = m if m % 2 != 0 else m - 1
+    
+    hist, bins, _ = gui_objects['ax_dist'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
+    
+    # Нормальний розподіл
+    if gui_objects['normal_var'].get():
+        mean, std = np.mean(values), np.std(values)
+        x = np.linspace(min(values), max(values), 100)
+        density = norm.pdf(x, mean, std)
+        gui_objects['ax_dist'].plot(x, density, 'r-', label='Нормальний розподіл')
+    
+    gui_objects['ax_dist'].set_title('Гістограма та розподіли')
+    gui_objects['ax_dist'].set_xlabel('Час затримки (сек)')
+    gui_objects['ax_dist'].set_ylabel('Щільність')
+    gui_objects['ax_dist'].legend()
+    
+    x_min, x_max = np.min(values), np.max(values)
+    x_range = x_max - x_min if x_max != x_min else 1
+    gui_objects['ax_dist'].set_xlim(x_min - 0.1 * x_range, x_max + 0.1 * x_range)
+    
+    y_max = max(np.max(hist), 0.5) if gui_objects['normal_var'].get() else np.max(hist)
+    gui_objects['ax_dist'].set_ylim(0, y_max * 1.1)
+    
+    gui_objects['dist_canvas'].draw()
+
 def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
@@ -646,3 +690,5 @@ def initialize_logic(objects):
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)
     gui_objects['call_type_btn'].config(command=analyze_call_types)
     gui_objects['refresh_graph_button'].config(command=update_histogram)
+    gui_objects['update_graph_btn'].config(command=update_distribution_plot)  # Прив'язуємо кнопку оновлення
+    update_distribution_plot()  # Ініціалізація графіка при запуску
