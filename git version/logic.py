@@ -675,8 +675,21 @@ def update_distribution_plot():
                 lambda_param = 1 / mean
                 x = np.linspace(0, max(values), 100)
                 density = expon.pdf(x, scale=mean)
-                gui_objects['ax_dist'].plot(x, density, 'r-', label='Експоненціальний розподіл')
+                gui_objects['ax_dist'].plot(x, density, 'b-', label='Експоненціальний розподіл')
                 max_density = max(max_density, np.max(density))
+    
+    # Розподіл Вейбулла
+    from scipy.stats import weibull_min
+    if gui_objects['weibull_var'].get():
+        if np.any(values < 0):
+            messagebox.showerror("Помилка", "Розподіл Вейбулла можливий лише для невід'ємних значень")
+            gui_objects['weibull_var'].set(False)
+        else:
+            shape, loc, scale = weibull_min.fit(values, floc=0)  # Фіксуємо loc=0 для відповідності даним
+            x = np.linspace(0, max(values), 100)
+            density = weibull_min.pdf(x, shape, loc=loc, scale=scale)
+            gui_objects['ax_dist'].plot(x, density, 'm-', label='Розподіл Вейбулла')
+            max_density = max(max_density, np.max(density))
     
     gui_objects['ax_dist'].set_title('Гістограма та розподіли')
     gui_objects['ax_dist'].set_xlabel('Час затримки (сек)')

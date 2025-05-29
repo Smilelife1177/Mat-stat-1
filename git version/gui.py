@@ -139,6 +139,11 @@ def create_gui(root):
     exponential_check = tk.Checkbutton(control_frame, text="Експоненціальний розподіл", variable=exponential_var)
     exponential_check.pack(side=tk.LEFT, padx=5)
 
+    weibull_var = tk.BooleanVar(value=False)
+    weibull_check = tk.Checkbutton(control_frame, text="Розподіл Вейбулла", variable=weibull_var)
+    weibull_check.pack(side=tk.LEFT, padx=5)
+
+
     update_graph_btn = tk.Button(control_frame, text="Оновити графік")
     update_graph_btn.pack(side=tk.LEFT, padx=5)
 
@@ -174,7 +179,8 @@ def create_gui(root):
         'precision_var': precision_var,
         'refresh_graph_button': refresh_graph_button,
         'normal_var': normal_var,
-        'exponential_var': exponential_var,  # Додаємо змінну для експоненціального чекбоксу
+        'exponential_var': exponential_var,
+        'weibull_var': weibull_var,  # Додаємо змінну для розподілу Вейбулла
         'update_graph_btn': update_graph_btn,
         'fig_dist': fig_dist,
         'ax_dist': ax_dist,
