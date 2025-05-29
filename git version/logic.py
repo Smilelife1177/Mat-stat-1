@@ -691,6 +691,17 @@ def update_distribution_plot():
             gui_objects['ax_dist'].plot(x, density, 'm-', label='Розподіл Вейбулла')
             max_density = max(max_density, np.max(density))
     
+    # Рівномірний розподіл
+    if gui_objects['uniform_var'].get():
+        x_min, x_max = np.min(values), np.max(values)
+        if x_max == x_min:
+            x_max += 1  # Уникаємо ділення на нуль
+        range_width = x_max - x_min
+        uniform_density = 1 / range_width if range_width > 0 else 0
+        x = np.linspace(x_min, x_max, 100)
+        gui_objects['ax_dist'].plot(x, [uniform_density] * len(x), 'c-', label='Рівномірний розподіл')
+        max_density = max(max_density, uniform_density)
+    
     gui_objects['ax_dist'].set_title('Гістограма та розподіли')
     gui_objects['ax_dist'].set_xlabel('Час затримки (сек)')
     gui_objects['ax_dist'].set_ylabel('Щільність')
