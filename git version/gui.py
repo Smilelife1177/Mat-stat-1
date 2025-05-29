@@ -12,14 +12,12 @@ def create_gui(root):
     tab3 = ttk.Frame(notebook)
     tab4 = ttk.Frame(notebook)
     tab5 = ttk.Frame(notebook)
-    tab6 = ttk.Frame(notebook)  # Нова вкладка для порівняння розподілів
 
     notebook.add(tab1, text='Основний аналіз')
     notebook.add(tab2, text='Нормальний розподіл')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab4, text='Аналіз за типами')
-    notebook.add(tab5, text='Розподіл Релея')
-    notebook.add(tab6, text='Порівняння розподілів')
+    notebook.add(tab5, text='Порівняння розподілів (Релея, Вейбулла, Рівномірний)')
 
     canvas = tk.Canvas(tab1)
     scrollbar = tk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
@@ -67,47 +65,6 @@ def create_gui(root):
     precision_entry = tk.Entry(scrollable_frame, textvariable=precision_var)
     precision_entry.pack()
 
-    # Чек-бокси для вибору розподілів
-    dist_frame = ttk.LabelFrame(scrollable_frame, text="Оберіть розподіли для порівняння", padding=(5, 5))
-    dist_frame.pack(fill='x', pady=5)
-
-    distributions = {
-        'norm': tk.BooleanVar(value=True),
-        'expon': tk.BooleanVar(value=True),
-        'weibull': tk.BooleanVar(value=True),
-        'uniform': tk.BooleanVar(value=True),
-        'rayleigh': tk.BooleanVar(value=True)
-    }
-
-    # Додаємо чек-бокси
-    tk.Checkbutton(dist_frame, text="Нормальний", variable=distributions['norm']).pack(anchor='w')
-    tk.Checkbutton(dist_frame, text="Експоненціальний", variable=distributions['expon']).pack(anchor='w')
-    tk.Checkbutton(dist_frame, text="Вейбулла", variable=distributions['weibull']).pack(anchor='w')
-    tk.Checkbutton(dist_frame, text="Рівномірний", variable=distributions['uniform']).pack(anchor='w')
-    tk.Checkbutton(dist_frame, text="Релея", variable=distributions['rayleigh']).pack(anchor='w')
-
-    # bounds_frame = ttk.LabelFrame(scrollable_frame, text="Встановлення границь", padding=(5, 5))
-    # bounds_frame.pack(fill='x', pady=10)
-
-    # lower_frame = tk.Frame(bounds_frame)
-    # lower_frame.pack(fill='x', pady=2)
-    # lower_label = tk.Label(lower_frame, text="Нижня границя:", width=15, anchor='w')
-    # lower_label.pack(side=tk.LEFT)
-    # lower_bound_var = tk.StringVar()
-    # lower_entry = tk.Entry(lower_frame, textvariable=lower_bound_var)
-    # lower_entry.pack(side=tk.LEFT, fill='x', expand=True)
-
-    # upper_frame = tk.Frame(bounds_frame)
-    # upper_frame.pack(fill='x', pady=2)
-    # upper_label = tk.Label(upper_frame, text="Верхня границя:", width=15, anchor='w')
-    # upper_label.pack(side=tk.LEFT)
-    # upper_bound_var = tk.StringVar()
-    # upper_entry = tk.Entry(upper_frame, textvariable=upper_bound_var)
-    # upper_entry.pack(side=tk.LEFT, fill='x', expand=True)
-
-    # apply_bounds_btn = tk.Button(bounds_frame, text="Застосувати границі")
-    # apply_bounds_btn.pack(fill=tk.X, pady=5)
-
     edit_frame = ttk.LabelFrame(scrollable_frame, text="Редагування даних", padding=(5, 5))
     edit_frame.pack(fill='x', pady=10)
 
@@ -134,14 +91,11 @@ def create_gui(root):
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
     cdf_btn.pack(fill=tk.X, pady=5)
 
-    rayleigh_btn = tk.Button(scrollable_frame, text="Побудувати розподіл Релея", state=tk.DISABLED)
+    rayleigh_btn = tk.Button(scrollable_frame, text="Порівняти розподіли (Релея, Вейбулла, Рівномірний)", state=tk.DISABLED)
     rayleigh_btn.pack(fill=tk.X, pady=5)
 
     call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
     call_type_btn.pack(fill=tk.X, pady=5)
-
-    distributions_btn = tk.Button(scrollable_frame, text="Порівняти розподіли", state=tk.DISABLED)
-    distributions_btn.pack(fill=tk.X, pady=5)
 
     char_frame = ttk.LabelFrame(scrollable_frame, text="Точкові характеристики", padding=(5, 5))
     char_frame.pack(fill='x', pady=10)
@@ -168,38 +122,57 @@ def create_gui(root):
     save_btn.pack(fill=tk.X, pady=2)
     editing_buttons.append(save_btn)
 
+    # Додавання чекбоксів та кнопки оновлення для вкладки tab5
+    dist_frame = ttk.LabelFrame(tab5, text="Оберіть розподіли для порівняння", padding=(5, 5))
+    dist_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+
+    distributions = {
+        'empirical': tk.BooleanVar(value=True),  # Чекбокс для емпіричного розподілу
+        'rayleigh': tk.BooleanVar(value=True),
+        'weibull': tk.BooleanVar(value=True),
+        'uniform': tk.BooleanVar(value=True)
+    }
+
+    tk.Checkbutton(dist_frame, text="Емпіричний", variable=distributions['empirical']).pack(anchor='w')
+    tk.Checkbutton(dist_frame, text="Релея", variable=distributions['rayleigh']).pack(anchor='w')
+    tk.Checkbutton(dist_frame, text="Вейбулла", variable=distributions['weibull']).pack(anchor='w')
+    tk.Checkbutton(dist_frame, text="Рівномірний", variable=distributions['uniform']).pack(anchor='w')
+
+    # Додавання кнопки оновлення графіка
+    update_dist_btn = tk.Button(dist_frame, text="Оновити графік", state=tk.DISABLED)
+    update_dist_btn.pack(fill=tk.X, pady=5)
+
     fig, hist_ax = plt.subplots(figsize=(8, 6))
     hist_canvas = FigureCanvasTkAgg(fig, master=tab1)
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
     return {
-    'bin_count_var': bin_count_var,
-    'info_text': info_text,
-    'editing_buttons': editing_buttons,
-    'plot_btn': plot_btn,
-    'cdf_btn': cdf_btn,
-    'call_type_btn': call_type_btn,
-    'rayleigh_btn': rayleigh_btn,
-    'distributions_btn': distributions_btn,
-    'char_table': char_table,
-    'data_box': data_box,
-    'fig': fig,
-    'hist_ax': hist_ax,
-    'hist_canvas': hist_canvas,
-    'tab2': tab2,
-    'tab3': tab3,
-    'tab4': tab4,
-    'tab5': tab5,
-    'tab6': tab6,
-    'load_button': load_button,
-    'update_button': update_button,
-    'standardize_btn': standardize_btn,
-    'log_btn': log_btn,
-    'shift_btn': shift_btn,
-    'outliers_btn': outliers_btn,
-    'reset_btn': reset_btn,
-    'save_btn': save_btn,
-    'confidence_var': confidence_var,
-    'precision_var': precision_var,
-    'distributions': distributions
-}
+        'bin_count_var': bin_count_var,
+        'info_text': info_text,
+        'editing_buttons': editing_buttons,
+        'plot_btn': plot_btn,
+        'cdf_btn': cdf_btn,
+        'call_type_btn': call_type_btn,
+        'rayleigh_btn': rayleigh_btn,
+        'char_table': char_table,
+        'data_box': data_box,
+        'fig': fig,
+        'hist_ax': hist_ax,
+        'hist_canvas': hist_canvas,
+        'tab2': tab2,
+        'tab3': tab3,
+        'tab4': tab4,
+        'tab5': tab5,
+        'load_button': load_button,
+        'update_button': update_button,
+        'standardize_btn': standardize_btn,
+        'log_btn': log_btn,
+        'shift_btn': shift_btn,
+        'outliers_btn': outliers_btn,
+        'reset_btn': reset_btn,
+        'save_btn': save_btn,
+        'confidence_var': confidence_var,
+        'precision_var': precision_var,
+        'distributions': distributions,
+        'update_dist_btn': update_dist_btn  # Додаємо кнопку оновлення
+    }
