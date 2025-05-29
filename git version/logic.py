@@ -650,7 +650,7 @@ def update_distribution_plot():
             m = int(np.cbrt(n))
             bin_count = m if m % 2 != 0 else m - 1
     
-    hist, bins, _ = gui_objects['ax_dist'].hist(values, bins=bin_count, color='green', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
+    hist, bins, _ = gui_objects['ax_dist'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
     
     # Нормальний розподіл
     max_density = np.max(hist)  # Для масштабування осі Y
@@ -701,6 +701,20 @@ def update_distribution_plot():
         x = np.linspace(x_min, x_max, 100)
         gui_objects['ax_dist'].plot(x, [uniform_density] * len(x), 'c-', label='Рівномірний розподіл')
         max_density = max(max_density, uniform_density)
+    
+    # Розподіл Релея
+    from scipy.stats import rayleigh
+    if gui_objects['rayleigh_var'].get():
+        if np.any(values < 0):
+            messagebox.showerror("Помилка", "Розподіл Релея можливий лише для невід'ємних значень")
+            gui_objects['rayleigh_var'].set(False)
+        else:
+            # Оцінюємо параметр sigma для розподілу Релея
+            sigma = np.sqrt(np.mean(values**2) / 2)  # sigma = sqrt(E[X^2]/2) для Релея
+            x = np.linspace(0, max(values), 100)
+            density = rayleigh.pdf(x, scale=sigma)
+            gui_objects['ax_dist'].plot(x, density, 'y-', label='Розподіл Релея')
+            max_density = max(max_density, np.max(density))
     
     gui_objects['ax_dist'].set_title('Гістограма та розподіли')
     gui_objects['ax_dist'].set_xlabel('Час затримки (сек)')

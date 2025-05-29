@@ -148,6 +148,10 @@ def create_gui(root):
     uniform_check.pack(side=tk.LEFT, padx=5)
 
 
+    rayleigh_var = tk.BooleanVar(value=False)
+    rayleigh_check = tk.Checkbutton(control_frame, text="Розподіл Релея", variable=rayleigh_var)
+    rayleigh_check.pack(side=tk.LEFT, padx=5)
+
     update_graph_btn = tk.Button(control_frame, text="Оновити графік")
     update_graph_btn.pack(side=tk.LEFT, padx=5)
 
@@ -185,7 +189,8 @@ def create_gui(root):
         'normal_var': normal_var,
         'exponential_var': exponential_var,
         'weibull_var': weibull_var,
-        'uniform_var': uniform_var,  # Додаємо змінну для рівномірного розподілу
+        'uniform_var': uniform_var,
+        'rayleigh_var': rayleigh_var,  # Додаємо змінну для розподілу Релея
         'update_graph_btn': update_graph_btn,
         'fig_dist': fig_dist,
         'ax_dist': ax_dist,
