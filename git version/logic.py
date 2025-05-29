@@ -219,9 +219,6 @@ def load_data():
         gui_objects['plot_btn'].config(state=tk.NORMAL)
         gui_objects['cdf_btn'].config(state=tk.NORMAL)
         gui_objects['call_type_btn'].config(state=tk.NORMAL)
-        min_val, max_val = np.min(values), np.max(values)
-        gui_objects['lower_bound_var'].set(str(min_val))
-        gui_objects['upper_bound_var'].set(str(max_val))
         
         mean_wait_time = np.mean(values)
         recommendation = ("Рекомендується збільшити кількість операторів у пікові години, "
@@ -293,12 +290,11 @@ def plot_distribution_functions():
     
     bin_dt, bin_gr = np.histogram(values, bins=n_bins)
     Y = np.cumsum(bin_dt) / len(values)
-    ###
     # Початок з першого інтервалу, прибираємо вертикальний стрибок на початку
     for i in range(len(Y)):
         ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
     ax.plot([bin_gr[-1], bin_gr[-1]], [Y[-1], 1], color='green', linewidth=2)
-    ###
+    
     mean, std = np.mean(values), np.std(values)
     confidence = gui_objects['confidence_var'].get() / 100
     
@@ -392,7 +388,7 @@ def plot_exponential_distribution():
     x_upper = x_max + x_margin
     
     ax.set_xlim(x_lower, x_upper)
-    ax.set_ylim(0, 1)  # Встановлюємо межі y-осі від 0 до 1.2
+    ax.set_ylim(0, 1)  # Встановлюємо межі y-осі від 0 до 1
     
     ax.set_title('Імовірнісна сітка експоненціального розподілу')
     ax.set_xlabel('Значення (Час очікування, хв)')
@@ -618,30 +614,6 @@ def remove_outliers():
     else:
         messagebox.showinfo("Видалення викидів", "Жодних викидів не видалено")
 
-def apply_bounds():
-    global values, call_types
-    if len(values) == 0:
-        messagebox.showwarning("Попередження", "Немає даних для застосування границь")
-        return
-    try:
-        lower = float(gui_objects['lower_bound_var'].get())
-        upper = float(gui_objects['upper_bound_var'].get())
-        if lower >= upper:
-            messagebox.showerror("Помилка", "Нижня границя має бути менше верхньої")
-            return
-        mask = (values >= lower) & (values <= upper)
-        if not np.any(mask):
-            messagebox.showerror("Помилка", "За вказаними границями немає даних")
-            return
-        values = values[mask]
-        call_types = call_types[mask]
-        update_statistics()
-        update_characteristics()
-        update_data_box()
-        messagebox.showinfo("Границі", f"Застосовано границі: [{lower:.4f}, {upper:.4f}]")
-    except ValueError:
-        messagebox.showerror("Помилка", "Введіть числові значення для границь")
-
 def reset_data():
     global values, original_values, call_types, original_call_types
     if len(original_values) == 0:
@@ -650,9 +622,6 @@ def reset_data():
     
     values = original_values.copy()
     call_types = original_call_types.copy()
-    min_val, max_val = np.min(values), np.max(values)
-    gui_objects['lower_bound_var'].set(str(min_val))
-    gui_objects['upper_bound_var'].set(str(max_val))
     update_statistics()
     update_characteristics()
     update_data_box()
@@ -668,7 +637,6 @@ def initialize_logic(objects):
     gui_objects['data_box'].bind('<FocusOut>', update_from_data_box)
     gui_objects['load_button'].config(command=load_data)
     gui_objects['update_button'].config(command=update_histogram)
-    gui_objects['apply_bounds_btn'].config(command=apply_bounds)
     gui_objects['standardize_btn'].config(command=standardize_data)
     gui_objects['log_btn'].config(command=log_transform)
     gui_objects['shift_btn'].config(command=shift_data)

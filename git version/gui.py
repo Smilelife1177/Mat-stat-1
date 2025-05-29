@@ -67,28 +67,6 @@ def create_gui(root):
     precision_entry = tk.Entry(scrollable_frame, textvariable=precision_var)
     precision_entry.pack()
 
-    bounds_frame = ttk.LabelFrame(scrollable_frame, text="Встановлення границь", padding=(5, 5))
-    bounds_frame.pack(fill='x', pady=10)
-
-    lower_frame = tk.Frame(bounds_frame)
-    lower_frame.pack(fill='x', pady=2)
-    lower_label = tk.Label(lower_frame, text="Нижня границя:", width=15, anchor='w')
-    lower_label.pack(side=tk.LEFT)
-    lower_bound_var = tk.StringVar()
-    lower_entry = tk.Entry(lower_frame, textvariable=lower_bound_var)
-    lower_entry.pack(side=tk.LEFT, fill='x', expand=True)
-
-    upper_frame = tk.Frame(bounds_frame)
-    upper_frame.pack(fill='x', pady=2)
-    upper_label = tk.Label(upper_frame, text="Верхня границя:", width=15, anchor='w')
-    upper_label.pack(side=tk.LEFT)
-    upper_bound_var = tk.StringVar()
-    upper_entry = tk.Entry(upper_frame, textvariable=upper_bound_var)
-    upper_entry.pack(side=tk.LEFT, fill='x', expand=True)
-
-    apply_bounds_btn = tk.Button(bounds_frame, text="Застосувати границі")
-    apply_bounds_btn.pack(fill=tk.X, pady=5)
-
     edit_frame = ttk.LabelFrame(scrollable_frame, text="Редагування даних", padding=(5, 5))
     edit_frame.pack(fill='x', pady=10)
 
@@ -107,7 +85,7 @@ def create_gui(root):
     reset_btn = tk.Button(edit_frame, text="скидання кнопка НАЖМИНАМЕНЕ", state=tk.DISABLED)
     reset_btn.pack(fill=tk.X, pady=2)
 
-    editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, reset_btn, apply_bounds_btn]
+    editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, reset_btn]
 
     plot_btn = tk.Button(scrollable_frame, text="Побудувати функції розподілу", state=tk.DISABLED)
     plot_btn.pack(fill=tk.X, pady=5)
@@ -115,7 +93,6 @@ def create_gui(root):
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
     cdf_btn.pack(fill=tk.X, pady=5)
 
-    # Нова кнопка для аналізу за типами
     call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
     call_type_btn.pack(fill=tk.X, pady=5)
 
@@ -151,12 +128,10 @@ def create_gui(root):
     return {
         'bin_count_var': bin_count_var,
         'info_text': info_text,
-        'lower_bound_var': lower_bound_var,
-        'upper_bound_var': upper_bound_var,
         'editing_buttons': editing_buttons,
         'plot_btn': plot_btn,
         'cdf_btn': cdf_btn,
-        'call_type_btn': call_type_btn,  # Додаємо нову кнопку
+        'call_type_btn': call_type_btn,
         'char_table': char_table,
         'data_box': data_box,
         'fig': fig,
@@ -164,10 +139,9 @@ def create_gui(root):
         'hist_canvas': hist_canvas,
         'tab2': tab2,
         'tab3': tab3,
-        'tab4': tab4,  # Додаємо нову вкладку
+        'tab4': tab4,
         'load_button': load_button,
         'update_button': update_button,
-        'apply_bounds_btn': apply_bounds_btn,
         'standardize_btn': standardize_btn,
         'log_btn': log_btn,
         'shift_btn': shift_btn,
