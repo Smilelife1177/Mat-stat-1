@@ -1,7 +1,7 @@
 # logic.py
 import numpy as np
 import pandas as pd
-from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon, weibull_min, rayleigh, uniform, chi2_contingency
+from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon, weibull_min, rayleigh, uniform, chi2_contingency, ttest_1samp
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -421,7 +421,7 @@ def analyze_call_types():
         messagebox.showwarning("Попередження", "Немає даних для аналізу за типами дзвінків")
         return
     
-    for widget in gui_objects['tab4'].winfo_children():
+    for widget in gui_objects['tab4'].Winfo_children():
         widget.destroy()
     
     unique_types = np.unique(call_types)
@@ -695,6 +695,23 @@ def update_distribution_plot():
         chi2_stat, p_value = chi2_contingency([hist, expected])[0:2]
         return chi2_stat, p_value
 
+    # Helper function for T-test bootstrap
+    def t_test_bootstrap(data, sample_sizes=[20, 50, 100, 400, 1000, 2000, 5000], bootstrap_samples=1000):
+        results = {}
+        pop_mean = np.mean(data)  # Hypothesized population mean
+        for n in sample_sizes:
+            t_stats = []
+            for _ in range(bootstrap_samples):
+                sample = np.random.choice(data, size=n, replace=True)
+                t_stat, _ = ttest_1samp(sample, pop_mean)
+                if not np.isnan(t_stat):
+                    t_stats.append(t_stat)
+            if t_stats:
+                mean_t = np.mean(t_stats)
+                std_t = np.std(t_stats, ddof=1)
+                results[n] = (mean_t, std_t)
+        return results
+
     # Flag to check if any distribution is plotted
     any_distribution_plotted = False
 
@@ -725,6 +742,12 @@ def update_distribution_plot():
                            f"{'Нормальний' if ks_stat < critical_value else 'Не нормальний'}\n"
                            f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                            f"{'Нормальний' if chi2_pval > 0.05 else 'Не нормальний'}\n")
+
+        # T-test bootstrap
+        t_results = t_test_bootstrap(values)
+        results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
+        for n, (mean_t, std_t) in t_results.items():
+            results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
 
     # Exponential Distribution
     if gui_objects['exponential_var'].get():
@@ -762,6 +785,12 @@ def update_distribution_plot():
                                    f"{'Експоненціальний' if ks_stat < critical_value else 'Не експоненціальний'}\n"
                                    f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                    f"{'Експоненціальний' if chi2_pval > 0.05 else 'Не експоненціальний'}\n")
+
+                # T-test bootstrap
+                t_results = t_test_bootstrap(values)
+                results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
+                for n, (mean_t, std_t) in t_results.items():
+                    results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
 
     # Weibull Distribution
     if gui_objects['weibull_var'].get():
@@ -806,6 +835,12 @@ def update_distribution_plot():
                                    f"{'Вейбулла' if ks_stat < critical_value else 'Не Вейбулла'}\n"
                                    f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                    f"{'Вейбулла' if chi2_pval > 0.05 else 'Не Вейбулла'}\n")
+
+                # T-test bootstrap
+                t_results = t_test_bootstrap(values)
+                results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
+                for n, (mean_t, std_t) in t_results.items():
+                    results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
             except Exception as e:
                 messagebox.showerror("Помилка", f"Не вдалося підігнати розподіл Вейбулла: {str(e)}")
                 gui_objects['weibull_var'].set(False)
@@ -844,6 +879,12 @@ def update_distribution_plot():
                            f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                            f"{'Рівномірний' if chi2_pval > 0.05 else 'Не рівномірний'}\n")
 
+        # T-test bootstrap
+        t_results = t_test_bootstrap(values)
+        results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
+        for n, (mean_t, std_t) in t_results.items():
+            results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
+
     # Rayleigh Distribution
     if gui_objects['rayleigh_var'].get():
         if np.any(values < 0):
@@ -875,6 +916,12 @@ def update_distribution_plot():
                                f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                f"{'Релея' if chi2_pval > 0.05 else 'Не Релея'}\n")
 
+            # T-test bootstrap
+            t_results = t_test_bootstrap(values)
+            results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
+            for n, (mean_t, std_t) in t_results.items():
+                results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
+
     # Update plot settings
     if any_distribution_plotted or gui_objects['normal_var'].get() or gui_objects['exponential_var'].get() or \
        gui_objects['weibull_var'].get() or gui_objects['uniform_var'].get() or gui_objects['rayleigh_var'].get():
@@ -896,6 +943,7 @@ def update_distribution_plot():
             gui_objects['dist_info_text'].insert(tk.END, "Жоден розподіл не вибрано або не підходить для даних.")
     except KeyError:
         messagebox.showerror("Помилка", "Текстове поле для результатів розподілів не знайдено. Перевірте конфігурацію GUI.")
+
 def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
