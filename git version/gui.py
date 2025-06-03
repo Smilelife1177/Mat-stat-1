@@ -4,6 +4,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 
 def create_gui(root):
+    # Створюємо notebook для вкладок
     notebook = ttk.Notebook(root)
     notebook.pack(fill='both', expand=True)
 
@@ -14,12 +15,14 @@ def create_gui(root):
     tab4 = ttk.Frame(notebook)
     tab5 = ttk.Frame(notebook)  # Нова вкладка для гістограми та розподілів
 
+    # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
-    notebook.add(tab2, text='Нормальний розподіл')
+    notebook.add(tab2, text='Функції розподілу')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab4, text='Аналіз за типами')
     notebook.add(tab5, text='Гістограма та розподіли')
 
+    # Вкладка 1: Основний аналіз
     canvas = tk.Canvas(tab1)
     scrollbar = tk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas)
@@ -81,12 +84,12 @@ def create_gui(root):
     outliers_btn = tk.Button(edit_frame, text="Вилучити аномальні дані", state=tk.DISABLED)
     outliers_btn.pack(fill=tk.X, pady=2)
 
-    reset_btn = tk.Button(edit_frame, text="Скинути дані", state=tk.DISABLED)
+    reset_btn = tk.Button(edit_frame, text="скидання кнопка НАЖМИНАМЕНЕ", state=tk.DISABLED)
     reset_btn.pack(fill=tk.X, pady=2)
 
     editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, reset_btn]
 
-    plot_btn = tk.Button(scrollable_frame, text="Побудувати нормальний розподіл", state=tk.DISABLED)
+    plot_btn = tk.Button(scrollable_frame, text="Побудувати функції розподілу", state=tk.DISABLED)
     plot_btn.pack(fill=tk.X, pady=5)
 
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
@@ -119,26 +122,6 @@ def create_gui(root):
     save_btn = tk.Button(data_frame, text="Зберегти дані", state=tk.DISABLED)
     save_btn.pack(fill=tk.X, pady=2)
     editing_buttons.append(save_btn)
-
-    # Додавання чекбоксів та кнопки оновлення для вкладки tab5
-    dist_frame = ttk.LabelFrame(tab5, text="Оберіть розподіли для порівняння", padding=(5, 5))
-    dist_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
-
-    distributions = {
-        'empirical': tk.BooleanVar(value=True),  # Чекбокс для емпіричного розподілу
-        'rayleigh': tk.BooleanVar(value=True),
-        'weibull': tk.BooleanVar(value=True),
-        'uniform': tk.BooleanVar(value=True)
-    }
-
-    tk.Checkbutton(dist_frame, text="Емпіричний", variable=distributions['empirical']).pack(anchor='w')
-    tk.Checkbutton(dist_frame, text="Релея", variable=distributions['rayleigh']).pack(anchor='w')
-    tk.Checkbutton(dist_frame, text="Вейбулла", variable=distributions['weibull']).pack(anchor='w')
-    tk.Checkbutton(dist_frame, text="Рівномірний", variable=distributions['uniform']).pack(anchor='w')
-
-    # Додавання кнопки оновлення графіка
-    update_dist_btn = tk.Button(dist_frame, text="Оновити графік", state=tk.DISABLED)
-    update_dist_btn.pack(fill=tk.X, pady=5)
 
     fig, hist_ax = plt.subplots(figsize=(8, 6))
     hist_canvas = FigureCanvasTkAgg(fig, master=tab1)
