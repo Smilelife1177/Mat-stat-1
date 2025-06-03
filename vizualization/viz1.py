@@ -1,71 +1,133 @@
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, ArrowStyle, ConnectionPatch
 import matplotlib.patches as patches
+import numpy as np
 
-def draw_module_diagram():
-    fig, ax = plt.subplots(figsize=(10, 8))
+# Set up the figure
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 6)
+ax.axis('off')  # Hide axes for a clean look
 
-    # Визначення модулів (прямокутники)
-    modules = [
-        {"name": "main.py", "x": 2, "y": 7, "color": "lightblue"},
-        {"name": "gui.py\n(create_gui)", "x": 2, "y": 5, "color": "lightgreen"},
-        {"name": "logic.py\n(initialize_logic)", "x": 2, "y": 3, "color": "lightcoral"},
-        {"name": "gui_objects\n(словник)", "x": 5, "y": 4, "color": "lightyellow"},
-        {"name": "Користувач\n(взаємодія)", "x": 5, "y": 6, "color": "lightpink"},
-        {"name": "Оновлення GUI\n(таблиці, графіки)", "x": 5, "y": 2, "color": "lightgoldenrodyellow"}
-    ]
+# Define square properties
+square_size = 2.5
+colors = {
+    'main': '#A3BEF8',    # Light blue
+    'gui': '#F8A3A3',     # Light red
+    'logic': '#A3F8A3'    # Light green
+}
+font_size = 14
+font_weight = 'bold'
 
-    # Малювання модулів
-    for module in modules:
-        ax.add_patch(FancyBboxPatch(
-            (module["x"] - 1, module["y"] - 0.5), 2, 1,
-            boxstyle="round,pad=0.3", facecolor=module["color"], edgecolor="black"
-        ))
-        ax.text(
-            module["x"], module["y"], module["name"],
-            ha="center", va="center", fontsize=10, weight="bold"
-        )
+# Positions for squares (x, y)
+positions = {
+    'main': (1, 3.5),
+    'gui': (4, 3.5),
+    'logic': (7, 3.5)
+}
 
-    # Малювання стрілок для взаємодій
-    arrows = [
-        # main.py -> create_gui
-        {"start": (2, 6.5), "end": (2, 5.5), "label": "викликає"},
-        # create_gui -> gui_objects
-        {"start": (2, 4.5), "end": (5, 4.5), "label": "повертає"},
-        # gui_objects -> initialize_logic
-        {"start": (5, 3.5), "end": (2, 3.5), "label": "передається"},
-        # initialize_logic -> gui_objects
-        {"start": (2, 2.5), "end": (5, 2.5), "label": "прив’язує функції\n(load_data, analyze_call_types)"},
-        # Користувач -> gui_objects
-        {"start": (5, 5.5), "end": (5, 4.5), "label": "натискає кнопки"},
-        # gui_objects -> Оновлення GUI
-        {"start": (5, 3.5), "end": (5, 2.5), "label": "оновлює"}
-    ]
+# Draw squares and labels
+for module, (x, y) in positions.items():
+    # Draw square
+    square = patches.Rectangle(
+        (x - square_size/2, y - square_size/2),
+        square_size,
+        square_size,
+        facecolor=colors[module],
+        edgecolor='black',
+        linewidth=1.5
+    )
+    ax.add_patch(square)
+    
+    # Add module label
+    label = module.replace('.py', '').upper()
+    ax.text(
+        x, y,
+        label,
+        ha='center',
+        va='center',
+        fontsize=font_size,
+        fontweight=font_weight,
+        color='black'
+    )
 
-    for arrow in arrows:
-        ax.add_patch(ConnectionPatch(
-            xyA=arrow["start"], xyB=arrow["end"],
-            coordsA="data", coordsB="data",
-            arrowstyle=ArrowStyle("->", head_length=0.4, head_width=0.2),
-            linewidth=1.5, color="black"
-        ))
-        # Додавання тексту до стрілок
-        ax.text(
-            (arrow["start"][0] + arrow["end"][0]) / 2,
-            (arrow["start"][1] + arrow["end"][1]) / 2 + 0.2,
-            arrow["label"],
-            ha="center", va="center", fontsize=8, bbox=dict(facecolor="white", alpha=0.8, edgecolor="none")
-        )
+# Draw arrows
+arrowprops = dict(
+    arrowstyle='->',
+    linewidth=1.5,
+    color='black',
+    connectionstyle='arc3,rad=0.1'
+)
 
-    # Налаштування осей
-    ax.set_xlim(0, 8)
-    ax.set_ylim(0, 8)
-    ax.set_axis_off()
-    plt.title("Схема взаємодії модулів", fontsize=14, pad=20)
-    plt.tight_layout()
+# main.py -> gui.py (initializes GUI)
+ax.annotate(
+    '',
+    xy=(positions['gui'][0] - square_size/2, positions['gui'][1]),
+    xytext=(positions['main'][0] + square_size/2, positions['main'][1]),
+    arrowprops=arrowprops
+)
+ax.text(
+    (positions['main'][0] + positions['gui'][0])/2, positions['main'][1] + 0.3,
+    'Ініціалізує',
+    ha='center',
+    fontsize=10,
+    color='black'
+)
 
-    # Показати діаграму
-    plt.show()
+# main.py -> logic.py (initializes logic)
+ax.annotate(
+    '',
+    xy=(positions['logic'][0] - square_size/2, positions['logic'][1]),
+    xytext=(positions['main'][0] + square_size/2, positions['main'][1]),
+    arrowprops=arrowprops
+)
+ax.text(
+    (positions['main'][0] + positions['logic'][0])/2, positions['main'][1] + 0.3,
+    'Ініціалізує',
+    ha='center',
+    fontsize=10,
+    color='black'
+)
 
-# Виклик функції для створення діаграми
-draw_module_diagram()
+# gui.py -> logic.py (sends user inputs)
+ax.annotate(
+    '',
+    xy=(positions['logic'][0] - square_size/2, positions['logic'][1] - 0.2),
+    xytext=(positions['gui'][0] + square_size/2, positions['gui'][1] - 0.2),
+    arrowprops=arrowprops
+)
+ax.text(
+    (positions['gui'][0] + positions['logic'][0])/2, positions['gui'][1] - 0.5,
+    'Ввід користувача',
+    ha='center',
+    fontsize=10,
+    color='black'
+)
+
+# logic.py -> gui.py (returns results)
+ax.annotate(
+    '',
+    xy=(positions['gui'][0] + square_size/2, positions['gui'][1] + 0.2),
+    xytext=(positions['logic'][0] - square_size/2, positions['logic'][1] + 0.2),
+    arrowprops=arrowprops
+)
+ax.text(
+    (positions['gui'][0] + positions['logic'][0])/2, positions['gui'][1] + 0.7,
+    'Результати',
+    ha='center',
+    fontsize=10,
+    color='black'
+)
+
+# Title
+plt.title(
+    'Взаємодія модулів програми',
+    fontsize=16,
+    fontweight='bold',
+    pad=20,
+    loc='center'
+)
+
+# Save and show
+plt.tight_layout()
+plt.savefig('module_interaction.png', dpi=300, bbox_inches='tight')
+plt.show()

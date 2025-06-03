@@ -7,17 +7,18 @@ def create_gui(root):
     notebook = ttk.Notebook(root)
     notebook.pack(fill='both', expand=True)
 
+    # Створюємо п'ять вкладок (додаємо нову вкладку)
     tab1 = ttk.Frame(notebook)
     tab2 = ttk.Frame(notebook)
     tab3 = ttk.Frame(notebook)
     tab4 = ttk.Frame(notebook)
-    tab5 = ttk.Frame(notebook)
+    tab5 = ttk.Frame(notebook)  # Нова вкладка для гістограми та розподілів
 
     notebook.add(tab1, text='Основний аналіз')
     notebook.add(tab2, text='Нормальний розподіл')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab4, text='Аналіз за типами')
-    notebook.add(tab5, text='Порівняння розподілів (Релея, Вейбулла, Рівномірний)')
+    notebook.add(tab5, text='Гістограма та розподіли')
 
     canvas = tk.Canvas(tab1)
     scrollbar = tk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
@@ -91,9 +92,6 @@ def create_gui(root):
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
     cdf_btn.pack(fill=tk.X, pady=5)
 
-    rayleigh_btn = tk.Button(scrollable_frame, text="Порівняти розподіли (Релея, Вейбулла, Рівномірний)", state=tk.DISABLED)
-    rayleigh_btn.pack(fill=tk.X, pady=5)
-
     call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
     call_type_btn.pack(fill=tk.X, pady=5)
 
@@ -146,14 +144,55 @@ def create_gui(root):
     hist_canvas = FigureCanvasTkAgg(fig, master=tab1)
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
+    # Нова вкладка 5: Гістограма та розподіли
+    control_frame = ttk.Frame(tab5)
+    control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+    normal_var = tk.BooleanVar(value=True)
+    normal_check = tk.Checkbutton(control_frame, text="Нормальний розподіл", variable=normal_var)
+    normal_check.pack(side=tk.LEFT, padx=5)
+
+    exponential_var = tk.BooleanVar(value=False)
+    exponential_check = tk.Checkbutton(control_frame, text="Експоненціальний розподіл", variable=exponential_var)
+    exponential_check.pack(side=tk.LEFT, padx=5)
+
+    weibull_var = tk.BooleanVar(value=False)
+    weibull_check = tk.Checkbutton(control_frame, text="Розподіл Вейбулла", variable=weibull_var)
+    weibull_check.pack(side=tk.LEFT, padx=5)
+
+    uniform_var = tk.BooleanVar(value=False)
+    uniform_check = tk.Checkbutton(control_frame, text="Рівномірний розподіл", variable=uniform_var)
+    uniform_check.pack(side=tk.LEFT, padx=5)
+
+
+    rayleigh_var = tk.BooleanVar(value=False)
+    rayleigh_check = tk.Checkbutton(control_frame, text="Розподіл Релея", variable=rayleigh_var)
+    rayleigh_check.pack(side=tk.LEFT, padx=5)
+
+    update_graph_btn = tk.Button(control_frame, text="Оновити графік")
+    update_graph_btn.pack(side=tk.LEFT, padx=5)
+
+    fig_dist, ax_dist = plt.subplots(figsize=(10, 6))
+    dist_canvas = FigureCanvasTkAgg(fig_dist, master=tab5)
+    dist_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+
+    info_frame_tab5 = ttk.Frame(tab5)
+    info_frame_tab5.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
+    dist_info_text = tk.Text(info_frame_tab5, height=10, width=50, wrap=tk.WORD)
+    dist_info_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    dist_info_scroll = tk.Scrollbar(info_frame_tab5, command=dist_info_text.yview)
+    dist_info_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+    dist_info_text.config(yscrollcommand=dist_info_scroll.set)
+
     return {
+        'dist_info_text': dist_info_text,
         'bin_count_var': bin_count_var,
         'info_text': info_text,
         'editing_buttons': editing_buttons,
         'plot_btn': plot_btn,
         'cdf_btn': cdf_btn,
         'call_type_btn': call_type_btn,
-        'rayleigh_btn': rayleigh_btn,
         'char_table': char_table,
         'data_box': data_box,
         'fig': fig,
@@ -173,6 +212,14 @@ def create_gui(root):
         'save_btn': save_btn,
         'confidence_var': confidence_var,
         'precision_var': precision_var,
-        'distributions': distributions,
-        'update_dist_btn': update_dist_btn  # Додаємо кнопку оновлення
+        'refresh_graph_button': refresh_graph_button,
+        'normal_var': normal_var,
+        'exponential_var': exponential_var,
+        'weibull_var': weibull_var,
+        'uniform_var': uniform_var,
+        'rayleigh_var': rayleigh_var,  # Додаємо змінну для розподілу Релея
+        'update_graph_btn': update_graph_btn,
+        'fig_dist': fig_dist,
+        'ax_dist': ax_dist,
+        'dist_canvas': dist_canvas
     }
