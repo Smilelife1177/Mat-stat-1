@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import norm, kstest, expon, weibull_min, rayleigh, uniform, chi2_contingency, ttest_1samp
 from tkinter import messagebox
 import tkinter as tk
+from tkinter import simpledialog
 
 def calculate_confidence_interval(data, statistic, confidence=0.95):
     n = len(data)
@@ -75,16 +76,23 @@ def update_distribution_plot(values, gui_objects):
         chi2_stat, p_value = chi2_contingency([hist, expected])[0:2]
         return chi2_stat, p_value
 
-    # Helper function for T-test bootstrap
-    def t_test_bootstrap(data, sample_sizes=[20, 50, 100, 400, 1000, 2000, 5000], bootstrap_samples=1000):
+    # Helper function for T-test with bootstrap for specific sample sizes
+    def calculate_t_test_bootstrap(data, sample_sizes=[20, 50, 100, 400, 1000, 2000, 5000], bootstrap_samples=1000, theta_0=None):
+        if theta_0 is None:
+            theta_0 = simpledialog.askfloat("T-тест", "Введіть гіпотетичне середнє значення (theta_0):", initialvalue=np.mean(data))
+            if theta_0 is None:
+                return {}
         results = {}
-        pop_mean = np.mean(data)  # Hypothesized population mean
         for n in sample_sizes:
+            if n > len(data):
+                continue
             t_stats = []
             for _ in range(bootstrap_samples):
                 sample = np.random.choice(data, size=n, replace=True)
-                t_stat, _ = ttest_1samp(sample, pop_mean)
-                if not np.isnan(t_stat):
+                theta_hat = np.mean(sample)
+                std_err = np.std(sample, ddof=1) / np.sqrt(n)
+                if std_err != 0:
+                    t_stat = (theta_0 - theta_hat) / std_err
                     t_stats.append(t_stat)
             if t_stats:
                 mean_t = np.mean(t_stats)
@@ -110,8 +118,6 @@ def update_distribution_plot(values, gui_objects):
                            f"  Оцінка середнього: {mean:.4f} (ДІ: [{mean_ci[0]:.4f}, {mean_ci[1]:.4f}])\n"
                            f"  Оцінка стд. відхилення: {std:.4f} (ДІ: [{std_ci[0]:.4f}, {std_ci[1]:.4f}])\n")
 
-        # CDF and confidence band
-        cdf = norm.cdf(x_theor, mean, std)
         # Goodness-of-fit tests
         ks_stat, ks_pval = kstest(values, 'norm', args=(mean, std))
         chi2_stat, chi2_pval = pearson_chi2_test(values, 'norm', (mean, std), bins)
@@ -121,11 +127,14 @@ def update_distribution_plot(values, gui_objects):
                            f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                            f"{'Нормальний' if chi2_pval > 0.05 else 'Не нормальний'}\n")
 
-        # T-test bootstrap
-        t_results = t_test_bootstrap(values)
-        results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
-        for n, (mean_t, std_t) in t_results.items():
-            results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
+        # T-test with bootstrap for specific sample sizes
+        t_results = calculate_t_test_bootstrap(values)
+        if t_results:
+            results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
+            for n, (mean_t, std_t) in t_results.items():
+                critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
+                                  f"Критичне t = {critical_t:.4f}\n")
 
     # Exponential Distribution
     if gui_objects['exponential_var'].get():
@@ -151,8 +160,6 @@ def update_distribution_plot(values, gui_objects):
                 results_text.append(f"Експоненціальний розподіл:\n"
                                    f"  Оцінка λ: {lambda_param:.4f} (ДІ: [{lambda_ci[0]:.4f}, {lambda_ci[1]:.4f}])\n")
 
-                # CDF and confidence band
-                cdf = expon.cdf(x_theor, scale=mean)
                 # Goodness-of-fit tests
                 ks_stat, ks_pval = kstest(values, 'expon', args=(0, mean))
                 chi2_stat, chi2_pval = pearson_chi2_test(values, 'expon', (0, mean), bins)
@@ -162,11 +169,14 @@ def update_distribution_plot(values, gui_objects):
                                    f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                    f"{'Експоненціальний' if chi2_pval > 0.05 else 'Не експоненціальний'}\n")
 
-                # T-test bootstrap
-                t_results = t_test_bootstrap(values)
-                results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
-                for n, (mean_t, std_t) in t_results.items():
-                    results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
+                # T-test with bootstrap for specific sample sizes
+                t_results = calculate_t_test_bootstrap(values)
+                if t_results:
+                    results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
+                    for n, (mean_t, std_t) in t_results.items():
+                        critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                        results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
+                                          f"Критичне t = {critical_t:.4f}\n")
 
     # Weibull Distribution
     if gui_objects['weibull_var'].get():
@@ -199,8 +209,6 @@ def update_distribution_plot(values, gui_objects):
                                    f"  Оцінка форми (k): {shape:.4f} (ДІ: [{shape_ci[0]:.4f}, {shape_ci[1]:.4f}])\n"
                                    f"  Оцінка масштабу (λ): {scale:.4f} (ДІ: [{scale_ci[0]:.4f}, {scale_ci[1]:.4f}])\n")
 
-                # CDF and confidence band
-                cdf = weibull_min.cdf(x_theor, shape, loc=loc, scale=scale)
                 # Goodness-of-fit tests
                 ks_stat, ks_pval = kstest(values, weibull_min.cdf, args=(shape, loc, scale))
                 chi2_stat, chi2_pval = pearson_chi2_test(values, 'weibull_min', (shape, loc, scale), bins)
@@ -210,11 +218,14 @@ def update_distribution_plot(values, gui_objects):
                                    f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                    f"{'Вейбулла' if chi2_pval > 0.05 else 'Не Вейбулла'}\n")
 
-                # T-test bootstrap
-                t_results = t_test_bootstrap(values)
-                results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
-                for n, (mean_t, std_t) in t_results.items():
-                    results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
+                # T-test with bootstrap for specific sample sizes
+                t_results = calculate_t_test_bootstrap(values)
+                if t_results:
+                    results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
+                    for n, (mean_t, std_t) in t_results.items():
+                        critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                        results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
+                                          f"Критичне t = {critical_t:.4f}\n")
             except Exception as e:
                 messagebox.showerror("Помилка", f"Не вдалося підігнати розподіл Вейбулла: {str(e)}")
                 gui_objects['weibull_var'].set(False)
@@ -240,8 +251,6 @@ def update_distribution_plot(values, gui_objects):
                            f"  Оцінка нижньої межі (a): {loc:.4f} (ДІ: [{loc_ci[0]:.4f}, {loc_ci[1]:.4f}])\n"
                            f"  Оцінка масштабу (b-a): {scale:.4f} (ДІ: [{scale_ci[0]:.4f}, {scale_ci[1]:.4f}])\n")
 
-        # CDF and confidence band
-        cdf = uniform.cdf(x_theor, loc=loc, scale=scale)
         # Goodness-of-fit tests
         ks_stat, ks_pval = kstest(values, 'uniform', args=(loc, scale))
         chi2_stat, chi2_pval = pearson_chi2_test(values, 'uniform', (loc, scale), bins)
@@ -251,11 +260,14 @@ def update_distribution_plot(values, gui_objects):
                            f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                            f"{'Рівномірний' if chi2_pval > 0.05 else 'Не рівномірний'}\n")
 
-        # T-test bootstrap
-        t_results = t_test_bootstrap(values)
-        results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
-        for n, (mean_t, std_t) in t_results.items():
-            results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
+        # T-test with bootstrap for specific sample sizes
+        t_results = calculate_t_test_bootstrap(values)
+        if t_results:
+            results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
+            for n, (mean_t, std_t) in t_results.items():
+                critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
+                                  f"Критичне t = {critical_t:.4f}\n")
 
     # Rayleigh Distribution
     if gui_objects['rayleigh_var'].get():
@@ -275,8 +287,6 @@ def update_distribution_plot(values, gui_objects):
             results_text.append(f"Розподіл Релея:\n"
                                f"  Оцінка масштабу (σ): {sigma:.4f} (ДІ: [{sigma_ci[0]:.4f}, {sigma_ci[1]:.4f}])\n")
 
-            # CDF and confidence band
-            cdf = rayleigh.cdf(x_theor, scale=sigma)
             # Goodness-of-fit tests
             ks_stat, ks_pval = kstest(values, 'rayleigh', args=(0, sigma))
             chi2_stat, chi2_pval = pearson_chi2_test(values, 'rayleigh', (0, sigma), bins)
@@ -286,11 +296,14 @@ def update_distribution_plot(values, gui_objects):
                                f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                f"{'Релея' if chi2_pval > 0.05 else 'Не Релея'}\n")
 
-            # T-test bootstrap
-            t_results = t_test_bootstrap(values)
-            results_text.append("  T-тест (середнє T-статистики та стд. відхилення):\n")
-            for n, (mean_t, std_t) in t_results.items():
-                results_text.append(f"    Обсяг вибірки {n}: Середнє = {mean_t:.4f}, Стд. відхилення = {std_t:.4f}\n")
+            # T-test with bootstrap for specific sample sizes
+            t_results = calculate_t_test_bootstrap(values)
+            if t_results:
+                results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
+                for n, (mean_t, std_t) in t_results.items():
+                    critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                    results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
+                                      f"Критичне t = {critical_t:.4f}\n")
 
     # Update plot settings
     if any_distribution_plotted or gui_objects['normal_var'].get() or gui_objects['exponential_var'].get() or \
