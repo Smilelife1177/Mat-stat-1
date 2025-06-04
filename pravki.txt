@@ -40,3 +40,8 @@ for lab2(
 ММК
 МММ
 ...)
+
+
+04.06.25
+Lab_3
+emp-func bug

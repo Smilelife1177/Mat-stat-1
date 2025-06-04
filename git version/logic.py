@@ -275,10 +275,11 @@ def plot_distribution_functions():
     
     bin_dt, bin_gr = np.histogram(values, bins=n_bins)
     Y = np.cumsum(bin_dt) / len(values)
-    # Початок з першого інтервалу, прибираємо вертикальний стрибок на початку
-    for i in range(len(Y)):
+    # Додаємо 0 на початок для коректного відображення емпіричного розподілу
+    Y = np.insert(Y, 0, 0)  # Починаємо з 0
+    # Малюємо ступеньки
+    for i in range(len(Y) - 1):
         ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
-    ax.plot([bin_gr[-1], bin_gr[-1]], [Y[-1], 1], color='green', linewidth=2)
     
     mean, std = np.mean(values), np.std(values)
     confidence = gui_objects['confidence_var'].get() / 100
@@ -600,6 +601,78 @@ def remove_outliers():
     else:
         messagebox.showinfo("Видалення викидів", "Жодних викидів не видалено")
 
+def remove_outliers_by_skewness():
+    global values, call_types
+    if len(values) == 0:
+        messagebox.showwarning("Попередження", "Немає даних для обробки")
+        return
+
+    mean = np.mean(values)
+    std = np.std(values, ddof=1)
+    skewness = skew(values)
+    
+    if std == 0:
+        messagebox.showerror("Помилка", "Стандартне відхилення дорівнює нулю. Неможливо виявити викиди.")
+        return
+    
+    # Визначаємо межі на основі асиметрії
+    k = 3  # Множник (аналог правила трьох сигм)
+    lower_bound = mean - k * std * (1 + skewness)
+    upper_bound = mean + k * std * (1 + skewness)
+    
+    # Знаходимо індекси аномалій
+    outlier_indices = np.where((values < lower_bound) | (values > upper_bound))[0]
+    
+    if len(outlier_indices) == 0:
+        messagebox.showinfo("Аномалії", "Аномальних значень за асиметрією не знайдено")
+        return
+    
+    # Формуємо інформацію про аномалії
+    outlier_info = [f"Індекс: {i}, Значення: {values[i]:.4f}, Асиметрія: {skewness:.4f}" 
+                    for i in outlier_indices]
+    
+    # Створюємо діалогове вікно для вибору аномалій
+    dialog = tk.Toplevel()
+    dialog.title("Підтвердження видалення аномалій за асиметрією")
+    dialog.geometry("400x300")
+    
+    tk.Label(dialog, text="Виявлені аномалії за асиметрією. Оберіть, які видалити:").pack(pady=5)
+    
+    listbox = tk.Listbox(dialog, selectmode=tk.MULTIPLE, height=10)
+    for info in outlier_info:
+        listbox.insert(tk.END, info)
+    listbox.pack(pady=5, fill=tk.BOTH, expand=True)
+    
+    selected_indices = []
+    
+    def confirm():
+        selected_indices.extend([outlier_indices[int(i)] for i in listbox.curselection()])
+        dialog.destroy()
+    
+    def cancel():
+        dialog.destroy()
+    
+    tk.Button(dialog, text="Видалити обрані", command=confirm).pack(pady=5)
+    tk.Button(dialog, text="Скасувати", command=cancel).pack(pady=5)
+    
+    dialog.grab_set()
+    dialog.wait_window()
+    
+    if selected_indices:
+        original_count = len(values)
+        values = np.delete(values, selected_indices)
+        call_types = np.delete(call_types, selected_indices)
+        removed_count = original_count - len(values)
+        
+        update_statistics()
+        update_characteristics()
+        update_data_box()
+        update_histogram()
+        update_distribution_plot(values, gui_objects)
+        messagebox.showinfo("Видалення викидів", f"Видалено {removed_count} викидів за асиметрією")
+    else:
+        messagebox.showinfo("Видалення викидів", "Жодних викидів не видалено")
+
 def reset_data():
     global values, original_values, call_types, original_call_types
     if len(original_values) == 0:
@@ -616,7 +689,6 @@ def reset_data():
 def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
-    
     gui_objects['save_btn'].config(command=save_data)
     gui_objects['data_box'].bind('<FocusOut>', update_from_data_box)
     gui_objects['load_button'].config(command=load_data)
@@ -625,6 +697,7 @@ def initialize_logic(objects):
     gui_objects['log_btn'].config(command=log_transform)
     gui_objects['shift_btn'].config(command=shift_data)
     gui_objects['outliers_btn'].config(command=remove_outliers)
+    gui_objects['outliers_skew_btn'].config(command=remove_outliers_by_skewness)  # Нова прив’язка
     gui_objects['reset_btn'].config(command=reset_data)
     gui_objects['plot_btn'].config(command=plot_distribution_functions)
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)

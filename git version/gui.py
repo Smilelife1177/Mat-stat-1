@@ -84,10 +84,14 @@ def create_gui(root):
     outliers_btn = tk.Button(edit_frame, text="Вилучити аномальні дані", state=tk.DISABLED)
     outliers_btn.pack(fill=tk.X, pady=2)
 
-    reset_btn = tk.Button(edit_frame, text="скидання кнопка НАЖМИНАМЕНЕ", state=tk.DISABLED)
+    # Нова кнопка для видалення аномалій за асиметрією
+    outliers_skew_btn = tk.Button(edit_frame, text="Вилучити аномальні дані за асиметрією", state=tk.DISABLED)
+    outliers_skew_btn.pack(fill=tk.X, pady=2)
+
+    reset_btn = tk.Button(edit_frame, text="скидання кнопка", state=tk.DISABLED)
     reset_btn.pack(fill=tk.X, pady=2)
 
-    editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, reset_btn]
+    editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, outliers_skew_btn, reset_btn]
 
     plot_btn = tk.Button(scrollable_frame, text="Побудувати функції розподілу", state=tk.DISABLED)
     plot_btn.pack(fill=tk.X, pady=5)
@@ -191,6 +195,7 @@ def create_gui(root):
         'log_btn': log_btn,
         'shift_btn': shift_btn,
         'outliers_btn': outliers_btn,
+        'outliers_skew_btn': outliers_skew_btn,  # Додаємо нову кнопку
         'reset_btn': reset_btn,
         'save_btn': save_btn,
         'confidence_var': confidence_var,
@@ -200,7 +205,7 @@ def create_gui(root):
         'exponential_var': exponential_var,
         'weibull_var': weibull_var,
         'uniform_var': uniform_var,
-        'rayleigh_var': rayleigh_var,  # Додаємо змінну для розподілу Релея
+        'rayleigh_var': rayleigh_var,
         'update_graph_btn': update_graph_btn,
         'fig_dist': fig_dist,
         'ax_dist': ax_dist,
