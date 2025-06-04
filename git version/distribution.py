@@ -53,12 +53,6 @@ def update_distribution_plot(values, gui_objects):
     # Calculate critical value for KS test once
     critical_value = np.sqrt(-0.5 * np.log((1 - confidence) / 2)) / np.sqrt(n)
 
-    # Helper function for confidence bands
-    def add_confidence_band(cdf, ax, x, label):
-        epsilon = np.sqrt(1/(2*n) * np.log(2/(1-confidence)))
-        ax.fill_between(x, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1),
-                        color='green', alpha=0.2, label=f'Довірчий інтервал {label}')
-
     # Helper function for Pearson's Chi-Square test
     def pearson_chi2_test(data, dist, params, bins):
         hist, bin_edges = np.histogram(data, bins=bins, density=False)
@@ -118,8 +112,6 @@ def update_distribution_plot(values, gui_objects):
 
         # CDF and confidence band
         cdf = norm.cdf(x_theor, mean, std)
-        add_confidence_band(cdf, gui_objects['ax_dist'], x_theor, 'Нормальний')
-
         # Goodness-of-fit tests
         ks_stat, ks_pval = kstest(values, 'norm', args=(mean, std))
         chi2_stat, chi2_pval = pearson_chi2_test(values, 'norm', (mean, std), bins)
@@ -161,8 +153,6 @@ def update_distribution_plot(values, gui_objects):
 
                 # CDF and confidence band
                 cdf = expon.cdf(x_theor, scale=mean)
-                add_confidence_band(cdf, gui_objects['ax_dist'], x_theor, 'Експоненціальний')
-
                 # Goodness-of-fit tests
                 ks_stat, ks_pval = kstest(values, 'expon', args=(0, mean))
                 chi2_stat, chi2_pval = pearson_chi2_test(values, 'expon', (0, mean), bins)
@@ -211,8 +201,6 @@ def update_distribution_plot(values, gui_objects):
 
                 # CDF and confidence band
                 cdf = weibull_min.cdf(x_theor, shape, loc=loc, scale=scale)
-                add_confidence_band(cdf, gui_objects['ax_dist'], x_theor, 'Вейбулла')
-
                 # Goodness-of-fit tests
                 ks_stat, ks_pval = kstest(values, weibull_min.cdf, args=(shape, loc, scale))
                 chi2_stat, chi2_pval = pearson_chi2_test(values, 'weibull_min', (shape, loc, scale), bins)
@@ -254,8 +242,6 @@ def update_distribution_plot(values, gui_objects):
 
         # CDF and confidence band
         cdf = uniform.cdf(x_theor, loc=loc, scale=scale)
-        add_confidence_band(cdf, gui_objects['ax_dist'], x_theor, 'Рівномірний')
-
         # Goodness-of-fit tests
         ks_stat, ks_pval = kstest(values, 'uniform', args=(loc, scale))
         chi2_stat, chi2_pval = pearson_chi2_test(values, 'uniform', (loc, scale), bins)
@@ -291,8 +277,6 @@ def update_distribution_plot(values, gui_objects):
 
             # CDF and confidence band
             cdf = rayleigh.cdf(x_theor, scale=sigma)
-            add_confidence_band(cdf, gui_objects['ax_dist'], x_theor, 'Релея')
-
             # Goodness-of-fit tests
             ks_stat, ks_pval = kstest(values, 'rayleigh', args=(0, sigma))
             chi2_stat, chi2_pval = pearson_chi2_test(values, 'rayleigh', (0, sigma), bins)

@@ -131,7 +131,7 @@ def create_gui(root):
     hist_canvas = FigureCanvasTkAgg(fig, master=tab1)
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-    # Нова вкладка 5: Гістограма та розподіли
+    # Вкладка 5: Гістограма та розподіли
     control_frame = ttk.Frame(tab5)
     control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
@@ -151,7 +151,6 @@ def create_gui(root):
     uniform_check = tk.Checkbutton(control_frame, text="Рівномірний розподіл", variable=uniform_var)
     uniform_check.pack(side=tk.LEFT, padx=5)
 
-
     rayleigh_var = tk.BooleanVar(value=False)
     rayleigh_check = tk.Checkbutton(control_frame, text="Розподіл Релея", variable=rayleigh_var)
     rayleigh_check.pack(side=tk.LEFT, padx=5)
@@ -159,14 +158,14 @@ def create_gui(root):
     update_graph_btn = tk.Button(control_frame, text="Оновити графік")
     update_graph_btn.pack(side=tk.LEFT, padx=5)
 
-    fig_dist, ax_dist = plt.subplots(figsize=(10, 6))
+    # Зменшення розміру графіка
+    fig_dist, ax_dist = plt.subplots(figsize=(8, 4))  # Зменшено з (10, 6) до (8, 4)
     dist_canvas = FigureCanvasTkAgg(fig_dist, master=tab5)
     dist_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-
     info_frame_tab5 = ttk.Frame(tab5)
-    info_frame_tab5.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
-    dist_info_text = tk.Text(info_frame_tab5, height=10, width=50, wrap=tk.WORD)
+    info_frame_tab5.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=10, pady=10)  # Змінено fill на BOTH для розтягування
+    dist_info_text = tk.Text(info_frame_tab5, height=15, width=60, wrap=tk.WORD)  # Збільшено height з 10 до 15, width з 50 до 60
     dist_info_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     dist_info_scroll = tk.Scrollbar(info_frame_tab5, command=dist_info_text.yview)
     dist_info_scroll.pack(side=tk.RIGHT, fill=tk.Y)
