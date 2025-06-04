@@ -44,4 +44,4 @@ for lab2(
 
 04.06.25
 Lab_3
-emp-func bug
+#emp-func bug

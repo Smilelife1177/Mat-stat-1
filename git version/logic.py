@@ -271,13 +271,17 @@ def plot_distribution_functions():
     # Використовуємо кількість класів із bin_count_var
     n_bins = gui_objects['bin_count_var'].get()
     if n_bins == 0:
-        n_bins = int(np.sqrt(len(values)))  # Автоматичний вибір, якщо 0
+        n = len(values)
+        if n < 100:
+            m = int(np.sqrt(n))
+            n_bins = m if m % 2 != 0 else m - 1
+        else:
+            m = int(np.cbrt(n))
+            n_bins = m if m % 2 != 0 else m - 1
     
     bin_dt, bin_gr = np.histogram(values, bins=n_bins)
     Y = np.cumsum(bin_dt) / len(values)
-    # Додаємо 0 на початок для коректного відображення емпіричного розподілу
     Y = np.insert(Y, 0, 0)  # Починаємо з 0
-    # Малюємо ступеньки
     for i in range(len(Y) - 1):
         ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
     
