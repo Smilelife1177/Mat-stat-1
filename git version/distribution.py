@@ -23,7 +23,6 @@ def calculate_confidence_interval(data, statistic, confidence=0.95):
 
 def update_distribution_plot(values, gui_objects):
     if len(values) == 0:
-        messagebox.showwarning("Попередження", "Немає даних для побудови розподілів")
         return
 
     gui_objects['ax_dist'].clear()

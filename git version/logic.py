@@ -35,16 +35,11 @@ def update_from_data_box(event=None):
             try:
                 new_values.append(float(item))
             except ValueError:
-                new_values.append(np.nan)
+                continue  # Пропускаємо нечислові значення
         new_values = np.array(new_values)
         
-        nan_mask = pd.isna(new_values)
-        if np.any(nan_mask):
-            mean_value = np.nanmean(new_values)
-            if np.isnan(mean_value):
-                raise ValueError("Усі значення є пропущеними. Неможливо обчислити середнє.")
-            new_values = np.where(nan_mask, mean_value, new_values)
-            messagebox.showinfo("Обробка даних", f"Замінено {np.sum(nan_mask)} пропущених значень середнім: {mean_value:.4f}")
+        if len(new_values) == 0:
+            raise ValueError("Немає валідних числових даних.")
         
         if not np.array_equal(values, new_values):
             values = new_values
@@ -163,28 +158,18 @@ def load_data():
             if call_type_col not in df.columns:
                 possible_type_cols = [col for col in df.columns if "тип" in col.lower() or "type" in col.lower()]
                 if not possible_type_cols:
-                    messagebox.showwarning("Попередження", "Стовпець 'Тип дзвінка' не знайдено. Аналіз за типами недоступний.")
                     call_types = np.array(['Невідомо'] * len(df))
                 else:
                     call_type_col = possible_type_cols[0]
             
             # Обробка часу очікування
+            # Обробка часу очікування
             df[wait_time_col] = df[wait_time_col].replace(r'^\s*$', np.nan, regex=True)
             df[wait_time_col] = pd.to_numeric(df[wait_time_col], errors='coerce')
+            df = df.dropna(subset=[wait_time_col])  # Видаляємо рядки з NaN
             values = df[wait_time_col].to_numpy()
-            
-            print("Завантажені значення (до заміни):", values)
-            
-            nan_mask = pd.isna(values)
-            if np.any(nan_mask):
-                mean_value = np.nanmean(values)
-                if np.isnan(mean_value):
-                    raise ValueError("Усі значення в стовпці є пропущеними. Неможливо обчислити середнє.")
-                values = np.where(nan_mask, mean_value, values)
-                nan_count = np.sum(nan_mask)
-                messagebox.showinfo("Обробка даних", f"Замінено {nan_count} пропущених значень середнім: {mean_value:.4f}")
-            
-            print("Значення після заміни:", values)
+
+            print("Завантажені значення:", values)
             
             # Обробка типів дзвінків
             if call_type_col in df.columns:
@@ -224,10 +209,6 @@ def load_data():
         gui_objects['cdf_btn'].config(state=tk.NORMAL)
         gui_objects['call_type_btn'].config(state=tk.NORMAL)
         
-        mean_wait_time = np.mean(values)
-        recommendation = ("Рекомендується збільшити кількість операторів у пікові години, "
-                        "а також розглянути впровадження IVR для автоматичних відповідей.") if mean_wait_time > 5 else "Поточна кількість операторів достатня."
-        messagebox.showinfo("Аналіз", f"Середній час очікування: {mean_wait_time:.2f} хв\nРекомендація: {recommendation}")
     except Exception as e:
         messagebox.showerror("Помилка", f"Не вдалося завантажити дані: {str(e)}")
         values = np.array([])
