@@ -402,97 +402,6 @@ def plot_exponential_distribution():
     info_label = ttk.Label(info_frame, text=ks_text, justify=tk.LEFT)
     info_label.pack()
 
-def analyze_call_types():
-    global values, call_types
-    if len(values) == 0 or len(call_types) == 0:
-        messagebox.showwarning("Попередження", "Немає даних для аналізу за типами дзвінків")
-        return
-    
-    for widget in gui_objects['tab4'].winfo_children():
-        widget.destroy()
-    
-    unique_types = np.unique(call_types)
-    
-    info_frame = tk.Frame(gui_objects['tab4'])
-    info_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
-    table_frame = ttk.LabelFrame(info_frame, text="Характеристики за типами дзвінків", padding=(5, 5))
-    table_frame.pack(fill='x', pady=5)
-    
-    char_table = ttk.Treeview(table_frame, columns=("type", "count", "mean", "median", "std"), show="headings")
-    char_table.heading("type", text="Тип дзвінка")
-    char_table.heading("count", text="Кількість")
-    char_table.heading("mean", text="Середнє (хв)")
-    char_table.heading("median", text="Медіана (хв)")
-    char_table.heading("std", text="Стд. відхилення")
-    char_table.column("type", width=150)
-    char_table.column("count", width=100)
-    char_table.column("mean", width=100)
-    char_table.column("median", width=100)
-    char_table.column("std", width=100)
-    char_table.pack(fill='x')
-    
-    recommendations = []
-    precision = gui_objects['precision_var'].get()
-    fmt = f".{precision}f"
-    
-    for call_type in unique_types:
-        mask = call_types == call_type
-        type_values = values[mask]
-        if len(type_values) == 0:
-            continue
-        count = len(type_values)
-        mean = np.mean(type_values)
-        median = np.median(type_values)
-        std = np.std(type_values, ddof=1)
-        
-        char_table.insert("", "end", values=(
-            call_type, 
-            str(count), 
-            f"{mean:{fmt}}", 
-            f"{median:{fmt}}", 
-            f"{std:{fmt}}"
-        ))
-        
-        if mean > 5:
-            recommendations.append(f"Для типу '{call_type}': середній час очікування ({mean:.2f} хв) перевищує 5 хвилин. "
-                                 f"Рекомендується додати операторів або впровадити IVR.")
-        else:
-            recommendations.append(f"Для типу '{call_type}': середній час очікування ({mean:.2f} хв) у нормі. "
-                                 f"Оптимізація не потрібна.")
-    
-    fig, ax = plt.subplots(figsize=(10, 6))
-    colors = ['blue', 'green', 'red', 'purple', 'orange']
-    for i, call_type in enumerate(unique_types):
-        mask = call_types == call_type
-        type_values = values[mask]
-        if len(type_values) == 0:
-            continue
-        bin_count = max(int(np.sqrt(len(type_values))), 1)
-        ax.hist(type_values, bins=bin_count, alpha=0.5, label=call_type, color=colors[i % len(colors)], 
-                density=True, edgecolor='black')
-    
-    x_min, x_max = np.min(values), np.max(values)
-    x_range = x_max - x_min if x_max != x_min else 1
-    ax.set_xlim(x_min - 0.1 * x_range, x_max + 0.1 * x_range)
-    ax.set_ylim(0, ax.get_ylim()[1] * 1.1)
-    
-    ax.set_title('Гістограми часу очікування за типами дзвінків')
-    ax.set_xlabel('Час очікування (хв)')
-    ax.set_ylabel('Щільність')
-    ax.legend()
-    ax.grid(True, linestyle='--', alpha=0.7)
-    
-    canvas = FigureCanvasTkAgg(fig, master=info_frame)
-    canvas.draw()
-    canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    
-    rec_frame = ttk.LabelFrame(info_frame, text="Рекомендації", padding=(5, 5))
-    rec_frame.pack(fill='x', pady=5)
-    rec_text = "\n".join(recommendations)
-    rec_label = ttk.Label(rec_frame, text=rec_text, justify=tk.LEFT)
-    rec_label.pack()
-
 def standardize_data():
     global values, call_types
     if len(values) == 0:
@@ -705,7 +614,6 @@ def initialize_logic(objects):
     gui_objects['reset_btn'].config(command=reset_data)
     gui_objects['plot_btn'].config(command=plot_distribution_functions)
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)
-    gui_objects['call_type_btn'].config(command=analyze_call_types)
     gui_objects['refresh_graph_button'].config(command=update_histogram)
     gui_objects['update_graph_btn'].config(command=lambda: update_distribution_plot(values, gui_objects))  # Передаємо values і gui_objects
     update_distribution_plot(values, gui_objects)  # Ініціалізація графіка при запуску

@@ -12,14 +12,14 @@ def create_gui(root):
     tab1 = ttk.Frame(notebook)
     tab2 = ttk.Frame(notebook)
     tab3 = ttk.Frame(notebook)
-    tab4 = ttk.Frame(notebook)
+    # tab4 = ttk.Frame(notebook)
     tab5 = ttk.Frame(notebook)  # Нова вкладка для гістограми та розподілів
 
     # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
     notebook.add(tab2, text='Функції розподілу')
     notebook.add(tab3, text='Експоненціальний розподіл')
-    notebook.add(tab4, text='Аналіз за типами')
+    # notebook.add(tab4, text='Аналіз за типами')
     notebook.add(tab5, text='Гістограма та розподіли')
 
     # Вкладка 1: Основний аналіз
@@ -187,7 +187,7 @@ def create_gui(root):
         'hist_canvas': hist_canvas,
         'tab2': tab2,
         'tab3': tab3,
-        'tab4': tab4,
+        # 'tab4': tab4,
         'tab5': tab5,
         'load_button': load_button,
         'update_button': update_button,
@@ -195,7 +195,7 @@ def create_gui(root):
         'log_btn': log_btn,
         'shift_btn': shift_btn,
         'outliers_btn': outliers_btn,
-        'outliers_skew_btn': outliers_skew_btn,  # Додаємо нову кнопку
+        'outliers_skew_btn': outliers_skew_btn,  
         'reset_btn': reset_btn,
         'save_btn': save_btn,
         'confidence_var': confidence_var,

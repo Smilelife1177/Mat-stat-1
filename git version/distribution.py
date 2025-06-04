@@ -57,7 +57,7 @@ def update_distribution_plot(values, gui_objects):
     def add_confidence_band(cdf, ax, x, label):
         epsilon = np.sqrt(1/(2*n) * np.log(2/(1-confidence)))
         ax.fill_between(x, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1),
-                        color='gray', alpha=0.2, label=f'Довірчий інтервал {label}')
+                        color='green', alpha=0.2, label=f'Довірчий інтервал {label}')
 
     # Helper function for Pearson's Chi-Square test
     def pearson_chi2_test(data, dist, params, bins):
