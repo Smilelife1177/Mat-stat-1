@@ -35,7 +35,7 @@ def update_from_data_box(event=None):
             try:
                 new_values.append(float(item))
             except ValueError:
-                continue  # Пропускаємо нечислові значення
+                continue
         new_values = np.array(new_values)
         
         if len(new_values) == 0:
@@ -43,12 +43,12 @@ def update_from_data_box(event=None):
         
         if not np.array_equal(values, new_values):
             values = new_values
-            call_types = np.array(['Невідомо'] * len(values))  # Оновлюємо заглушкою
+            call_types = np.array(['Невідомо'] * len(values))
             print("Оновлені значення з текстового поля:", values)
             update_statistics()
             update_characteristics()
             update_data_box()
-            update_distribution_plot(values, gui_objects)  # Передаємо values і gui_objects
+            update_distribution_plot(values, gui_objects)
         else:
             print("Дані не змінилися, пропускаємо оновлення.")
     except ValueError as e:
@@ -133,7 +133,7 @@ def update_data_box():
     formatted_values = ', '.join([f"{val:.4f}" for val in values])
     gui_objects['data_box'].insert(tk.END, formatted_values)
     update_histogram()
-    update_distribution_plot(values, gui_objects)  # Передаємо values і gui_objects
+    update_distribution_plot(values, gui_objects)
 
 def load_data():
     global values, original_values, call_types, original_call_types
@@ -147,14 +147,12 @@ def load_data():
             wait_time_col = "Час очікування (хв)"
             call_type_col = "Тип дзвінка"
             
-            # Перевіряємо стовпець із часом очікування
             if wait_time_col not in df.columns:
                 possible_cols = [col for col in df.columns if "час" in col.lower() or "wait" in col.lower()]
                 if not possible_cols:
                     raise ValueError("У файлі немає стовпця з часом очікування. Перевірте структуру даних.")
                 wait_time_col = possible_cols[0]
             
-            # Перевіряємо стовпець із типом дзвінка
             if call_type_col not in df.columns:
                 possible_type_cols = [col for col in df.columns if "тип" in col.lower() or "type" in col.lower()]
                 if not possible_type_cols:
@@ -162,16 +160,12 @@ def load_data():
                 else:
                     call_type_col = possible_type_cols[0]
             
-            # Обробка часу очікування
-            # Обробка часу очікування
             df[wait_time_col] = df[wait_time_col].replace(r'^\s*$', np.nan, regex=True)
             df[wait_time_col] = pd.to_numeric(df[wait_time_col], errors='coerce')
-            df = df.dropna(subset=[wait_time_col])  # Видаляємо рядки з NaN
+            df = df.dropna(subset=[wait_time_col])
             values = df[wait_time_col].to_numpy()
-
             print("Завантажені значення:", values)
             
-            # Обробка типів дзвінків
             if call_type_col in df.columns:
                 call_types = df[call_type_col].fillna('Невідомо').to_numpy()
             else:
@@ -180,7 +174,6 @@ def load_data():
             print("Типи дзвінків:", call_types)
             
         else:
-            # Текстові файли не підтримують типи дзвінків
             with open(file_path, 'r') as file:
                 data = file.read().replace(',', '.').strip()
             data_list = [x for x in data.split() if x]
@@ -235,20 +228,23 @@ def update_histogram():
     gui_objects['hist_ax'].clear()
     
     hist, bins, _ = gui_objects['hist_ax'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True)
-    gui_objects['hist_ax'].set_title('Гістограма часу очікування та щільність')
+    gui_objects['hist_ax'].set_title('Гістограма часу очікування')
     
-    mean, std = np.mean(values), np.std(values)
-    x = np.linspace(min(values), max(values), 100)
-    density = norm.pdf(x, mean, std)
-    gui_objects['hist_ax'].plot(x, density, 'r-', label='Щільність')
-    
-    gui_objects['hist_ax'].legend()
+    # Побудова функції щільності, якщо чекбокс увімкнено
+    if gui_objects['density_var'].get():
+        mean, std = np.mean(values), np.std(values)
+        x = np.linspace(min(values), max(values), 100)
+        density = norm.pdf(x, mean, std)
+        gui_objects['hist_ax'].plot(x, density, 'r-', label='Щільність')  # Виправлено тут
+        gui_objects['hist_ax'].legend()
     
     x_min, x_max = np.min(values), np.max(values)
     x_range = x_max - x_min if x_max != x_min else 1
     gui_objects['hist_ax'].set_xlim(x_min - 0.1 * x_range, x_max + 0.1 * x_range)
     
-    y_max = max(np.max(hist), np.max(density))
+    y_max = np.max(hist)
+    if gui_objects['density_var'].get():
+        y_max = max(y_max, np.max(density))
     gui_objects['hist_ax'].set_ylim(0, y_max * 1.1)
     
     gui_objects['hist_canvas'].draw()
@@ -268,7 +264,6 @@ def plot_distribution_functions():
     
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Використовуємо кількість класів із bin_count_var
     n_bins = gui_objects['bin_count_var'].get()
     if n_bins == 0:
         n = len(values)
@@ -281,7 +276,7 @@ def plot_distribution_functions():
     
     bin_dt, bin_gr = np.histogram(values, bins=n_bins)
     Y = np.cumsum(bin_dt) / len(values)
-    Y = np.insert(Y, 0, 0)  # Починаємо з 0
+    Y = np.insert(Y, 0, 0)
     for i in range(len(Y) - 1):
         ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
     
@@ -345,11 +340,9 @@ def plot_exponential_distribution():
     sorted_values = np.sort(values)
     n = len(sorted_values)
     
-    # Обчислення емпіричних ймовірностей та y-значень
     empirical_probs = np.arange(1, n + 1) / (n + 1)
     y_values = -np.log(1 - empirical_probs)
     
-    # Нормалізація y-значень, щоб максимум був 1
     y_max = np.max(y_values)
     if y_max == 0:
         messagebox.showerror("Помилка", "Максимальне значення y дорівнює нулю. Неможливо нормалізувати.")
@@ -362,13 +355,11 @@ def plot_exponential_distribution():
         return
     lambda_param = 1 / mean
     
-    # Побудова точок даних із нормалізованими y-значеннями
     ax.scatter(sorted_values, y_values_normalized, color='green', label='Дані', s=50)
     
-    # Теоретична лінія (нормалізована)
     x_theor = np.linspace(0, np.max(sorted_values) * 1.2, 100)
     y_theor = lambda_param * x_theor
-    y_theor_normalized = y_theor / y_max  # Нормалізуємо теоретичну лінію
+    y_theor_normalized = y_theor / y_max
     ax.plot(x_theor, y_theor_normalized, color='blue', linestyle='--', label=f'Експоненціальний розподіл (λ={lambda_param:.4f})')
     
     x_min, x_max = np.min(values), np.max(values)
@@ -378,7 +369,7 @@ def plot_exponential_distribution():
     x_upper = x_max + x_margin
     
     ax.set_xlim(x_lower, x_upper)
-    ax.set_ylim(0, 1)  # Встановлюємо межі y-осі від 0 до 1
+    ax.set_ylim(0, 1)
     
     ax.set_title('Імовірнісна сітка експоненціального розподілу')
     ax.set_xlabel('Значення (Час очікування, хв)')
@@ -413,7 +404,7 @@ def standardize_data():
         messagebox.showerror("Помилка", "Стандартне відхилення дорівнює нулю. Неможливо стандартизувати.")
         return
     values = (values - mean) / std
-    call_types = np.array(['Невідомо'] * len(values))  # Скидаємо типи
+    call_types = np.array(['Невідомо'] * len(values))
     update_statistics()
     update_characteristics()
     update_data_box()
@@ -428,7 +419,7 @@ def log_transform():
         messagebox.showerror("Помилка", "Логарифмування можливе тільки для додатних значень")
         return
     values = np.log(values)
-    call_types = np.array(['Невідомо'] * len(values))  # Скидаємо типи
+    call_types = np.array(['Невідомо'] * len(values))
     update_statistics()
     update_characteristics()
     update_data_box()
@@ -442,7 +433,7 @@ def shift_data():
     shift_value = simpledialog.askfloat("Зсув даних", "Введіть значення зсуву:")
     if shift_value is not None:
         values = values + shift_value
-        call_types = np.array(['Невідомо'] * len(values))  # Скидаємо типи
+        call_types = np.array(['Невідомо'] * len(values))
         update_statistics()
         update_characteristics()
         update_data_box()
@@ -509,7 +500,7 @@ def remove_outliers():
         update_characteristics()
         update_data_box()
         update_histogram()
-        update_distribution_plot(values, gui_objects)  # Передаємо values і gui_objects
+        update_distribution_plot(values, gui_objects)
         messagebox.showinfo("Видалення викидів", f"Видалено {removed_count} викидів")
     else:
         messagebox.showinfo("Видалення викидів", "Жодних викидів не видалено")
@@ -528,23 +519,19 @@ def remove_outliers_by_skewness():
         messagebox.showerror("Помилка", "Стандартне відхилення дорівнює нулю. Неможливо виявити викиди.")
         return
     
-    # Визначаємо межі на основі асиметрії
-    k = 3  # Множник (аналог правила трьох сигм)
+    k = 3
     lower_bound = mean - k * std * (1 + skewness)
     upper_bound = mean + k * std * (1 + skewness)
     
-    # Знаходимо індекси аномалій
     outlier_indices = np.where((values < lower_bound) | (values > upper_bound))[0]
     
     if len(outlier_indices) == 0:
         messagebox.showinfo("Аномалії", "Аномальних значень за асиметрією не знайдено")
         return
     
-    # Формуємо інформацію про аномалії
     outlier_info = [f"Індекс: {i}, Значення: {values[i]:.4f}, Асиметрія: {skewness:.4f}" 
                     for i in outlier_indices]
     
-    # Створюємо діалогове вікно для вибору аномалій
     dialog = tk.Toplevel()
     dialog.title("Підтвердження видалення аномалій за асиметрією")
     dialog.geometry("400x300")
@@ -610,10 +597,10 @@ def initialize_logic(objects):
     gui_objects['log_btn'].config(command=log_transform)
     gui_objects['shift_btn'].config(command=shift_data)
     gui_objects['outliers_btn'].config(command=remove_outliers)
-    gui_objects['outliers_skew_btn'].config(command=remove_outliers_by_skewness)  # Нова прив’язка
+    gui_objects['outliers_skew_btn'].config(command=remove_outliers_by_skewness)
     gui_objects['reset_btn'].config(command=reset_data)
     gui_objects['plot_btn'].config(command=plot_distribution_functions)
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)
     gui_objects['refresh_graph_button'].config(command=update_histogram)
-    gui_objects['update_graph_btn'].config(command=lambda: update_distribution_plot(values, gui_objects))  # Передаємо values і gui_objects
-    update_distribution_plot(values, gui_objects)  # Ініціалізація графіка при запуску
+    gui_objects['update_graph_btn'].config(command=lambda: update_distribution_plot(values, gui_objects))
+    update_distribution_plot(values, gui_objects)

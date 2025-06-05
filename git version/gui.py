@@ -8,18 +8,16 @@ def create_gui(root):
     notebook = ttk.Notebook(root)
     notebook.pack(fill='both', expand=True)
 
-    # Створюємо п'ять вкладок (додаємо нову вкладку)
+    # Створюємо п'ять вкладок
     tab1 = ttk.Frame(notebook)
     tab2 = ttk.Frame(notebook)
     tab3 = ttk.Frame(notebook)
-    # tab4 = ttk.Frame(notebook)
-    tab5 = ttk.Frame(notebook)  # Нова вкладка для гістограми та розподілів
+    tab5 = ttk.Frame(notebook)
 
     # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
     notebook.add(tab2, text='Функції розподілу')
     notebook.add(tab3, text='Експоненціальний розподіл')
-    # notebook.add(tab4, text='Аналіз за типами')
     notebook.add(tab5, text='Гістограма та розподіли')
 
     # Вкладка 1: Основний аналіз
@@ -46,6 +44,11 @@ def create_gui(root):
     bin_count_var = tk.IntVar(value=0)
     bin_entry = tk.Entry(scrollable_frame, textvariable=bin_count_var)
     bin_entry.pack()
+
+    # Новий чекбокс для функції щільності
+    density_var = tk.BooleanVar(value=False)
+    density_check = tk.Checkbutton(scrollable_frame, text="Показати функцію щільності", variable=density_var)
+    density_check.pack(pady=5)
 
     update_button = tk.Button(scrollable_frame, text="Оновити гістограму")
     update_button.pack(fill=tk.X, pady=5)
@@ -84,7 +87,6 @@ def create_gui(root):
     outliers_btn = tk.Button(edit_frame, text="Вилучити аномальні дані", state=tk.DISABLED)
     outliers_btn.pack(fill=tk.X, pady=2)
 
-    # Нова кнопка для видалення аномалій за асиметрією
     outliers_skew_btn = tk.Button(edit_frame, text="Вилучити аномальні дані за асиметрією", state=tk.DISABLED)
     outliers_skew_btn.pack(fill=tk.X, pady=2)
 
@@ -158,14 +160,13 @@ def create_gui(root):
     update_graph_btn = tk.Button(control_frame, text="Оновити графік")
     update_graph_btn.pack(side=tk.LEFT, padx=5)
 
-    # Зменшення розміру графіка
-    fig_dist, ax_dist = plt.subplots(figsize=(8, 4))  # Зменшено з (10, 6) до (8, 4)
+    fig_dist, ax_dist = plt.subplots(figsize=(8, 4))
     dist_canvas = FigureCanvasTkAgg(fig_dist, master=tab5)
     dist_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     info_frame_tab5 = ttk.Frame(tab5)
-    info_frame_tab5.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=10, pady=10)  # Змінено fill на BOTH для розтягування
-    dist_info_text = tk.Text(info_frame_tab5, height=15, width=60, wrap=tk.WORD)  # Збільшено height з 10 до 15, width з 50 до 60
+    info_frame_tab5.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=10, pady=10)
+    dist_info_text = tk.Text(info_frame_tab5, height=15, width=60, wrap=tk.WORD)
     dist_info_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     dist_info_scroll = tk.Scrollbar(info_frame_tab5, command=dist_info_text.yview)
     dist_info_scroll.pack(side=tk.RIGHT, fill=tk.Y)
@@ -186,7 +187,6 @@ def create_gui(root):
         'hist_canvas': hist_canvas,
         'tab2': tab2,
         'tab3': tab3,
-        # 'tab4': tab4,
         'tab5': tab5,
         'load_button': load_button,
         'update_button': update_button,
@@ -194,7 +194,7 @@ def create_gui(root):
         'log_btn': log_btn,
         'shift_btn': shift_btn,
         'outliers_btn': outliers_btn,
-        'outliers_skew_btn': outliers_skew_btn,  
+        'outliers_skew_btn': outliers_skew_btn,
         'reset_btn': reset_btn,
         'save_btn': save_btn,
         'confidence_var': confidence_var,
@@ -208,5 +208,6 @@ def create_gui(root):
         'update_graph_btn': update_graph_btn,
         'fig_dist': fig_dist,
         'ax_dist': ax_dist,
-        'dist_canvas': dist_canvas
+        'dist_canvas': dist_canvas,
+        'density_var': density_var
     }
