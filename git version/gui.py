@@ -101,8 +101,8 @@ def create_gui(root):
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
     cdf_btn.pack(fill=tk.X, pady=5)
 
-    call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
-    call_type_btn.pack(fill=tk.X, pady=5)
+    # call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
+    # call_type_btn.pack(fill=tk.X, pady=5)
 
     char_frame = ttk.LabelFrame(scrollable_frame, text="Точкові характеристики", padding=(5, 5))
     char_frame.pack(fill='x', pady=10)
@@ -137,7 +137,7 @@ def create_gui(root):
     control_frame = ttk.Frame(tab5)
     control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
-    normal_var = tk.BooleanVar(value=True)
+    normal_var = tk.BooleanVar(value=False)
     normal_check = tk.Checkbutton(control_frame, text="Нормальний розподіл", variable=normal_var)
     normal_check.pack(side=tk.LEFT, padx=5)
 
@@ -179,7 +179,7 @@ def create_gui(root):
         'editing_buttons': editing_buttons,
         'plot_btn': plot_btn,
         'cdf_btn': cdf_btn,
-        'call_type_btn': call_type_btn,
+        # 'call_type_btn': call_type_btn,
         'char_table': char_table,
         'data_box': data_box,
         'fig': fig,

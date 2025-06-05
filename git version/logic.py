@@ -200,7 +200,7 @@ def load_data():
             btn.config(state=tk.NORMAL)
         gui_objects['plot_btn'].config(state=tk.NORMAL)
         gui_objects['cdf_btn'].config(state=tk.NORMAL)
-        gui_objects['call_type_btn'].config(state=tk.NORMAL)
+        # gui_objects['call_type_btn'].config(state=tk.NORMAL)
         
     except Exception as e:
         messagebox.showerror("Помилка", f"Не вдалося завантажити дані: {str(e)}")
@@ -355,7 +355,7 @@ def plot_exponential_distribution():
         return
     lambda_param = 1 / mean
     
-    ax.scatter(sorted_values, y_values_normalized, color='green', label='Дані', s=50)
+    ax.scatter(sorted_values, y_values_normalized, color='green', label='Дані', s=10)
     
     x_theor = np.linspace(0, np.max(sorted_values) * 1.2, 100)
     y_theor = lambda_param * x_theor
