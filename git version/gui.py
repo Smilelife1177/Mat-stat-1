@@ -38,6 +38,16 @@ def create_gui(root):
     load_button = tk.Button(scrollable_frame, text="Завантажити дані")
     load_button.pack(fill=tk.X, pady=5)
 
+    # Додаємо поле для введення параметра λ та кнопку для генерації вибірок
+    lambda_label = tk.Label(scrollable_frame, text="Параметр λ для експоненціального розподілу:")
+    lambda_label.pack()
+    lambda_var = tk.DoubleVar(value=1.0)
+    lambda_entry = tk.Entry(scrollable_frame, textvariable=lambda_var)
+    lambda_entry.pack()
+
+    generate_button = tk.Button(scrollable_frame, text="Згенерувати вибірки")
+    generate_button.pack(fill=tk.X, pady=5)
+
     bin_label = tk.Label(scrollable_frame, text="Введіть кількість класів для гістограми:")
     bin_label.pack()
 
@@ -45,7 +55,6 @@ def create_gui(root):
     bin_entry = tk.Entry(scrollable_frame, textvariable=bin_count_var)
     bin_entry.pack()
 
-    # Новий чекбокс для функції щільності
     density_var = tk.BooleanVar(value=False)
     density_check = tk.Checkbutton(scrollable_frame, text="Показати функцію щільності", variable=density_var)
     density_check.pack(pady=5)
@@ -90,7 +99,7 @@ def create_gui(root):
     outliers_skew_btn = tk.Button(edit_frame, text="Вилучити аномальні дані за асиметрією", state=tk.DISABLED)
     outliers_skew_btn.pack(fill=tk.X, pady=2)
 
-    reset_btn = tk.Button(edit_frame, text="скидання кнопка", state=tk.DISABLED)
+    reset_btn = tk.Button(edit_frame, text="Скинути", state=tk.DISABLED)
     reset_btn.pack(fill=tk.X, pady=2)
 
     editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, outliers_skew_btn, reset_btn]
@@ -100,9 +109,6 @@ def create_gui(root):
 
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
     cdf_btn.pack(fill=tk.X, pady=5)
-
-    # call_type_btn = tk.Button(scrollable_frame, text="Аналіз за типами дзвінків", state=tk.DISABLED)
-    # call_type_btn.pack(fill=tk.X, pady=5)
 
     char_frame = ttk.LabelFrame(scrollable_frame, text="Точкові характеристики", padding=(5, 5))
     char_frame.pack(fill='x', pady=10)
@@ -179,7 +185,6 @@ def create_gui(root):
         'editing_buttons': editing_buttons,
         'plot_btn': plot_btn,
         'cdf_btn': cdf_btn,
-        # 'call_type_btn': call_type_btn,
         'char_table': char_table,
         'data_box': data_box,
         'fig': fig,
@@ -209,5 +214,7 @@ def create_gui(root):
         'fig_dist': fig_dist,
         'ax_dist': ax_dist,
         'dist_canvas': dist_canvas,
-        'density_var': density_var
+        'density_var': density_var,
+        'lambda_var': lambda_var,
+        'generate_button': generate_button
     }

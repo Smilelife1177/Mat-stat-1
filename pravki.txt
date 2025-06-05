@@ -35,7 +35,8 @@
 !>(*?) anomal_delete !>(*?)
 
 13.05.2025
-for lab2(
+for lab2
+(...
 ММП
 ММК
 МММ
@@ -45,3 +46,6 @@ for lab2(
 04.06.25
 Lab_3
 #emp-func bug
+
+05.06.25
+!add more (all) by book!

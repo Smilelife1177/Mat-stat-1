@@ -1,4 +1,3 @@
-# logic.py
 import numpy as np
 import pandas as pd
 from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon, weibull_min, rayleigh, uniform, chi2_contingency, ttest_1samp
@@ -200,7 +199,6 @@ def load_data():
             btn.config(state=tk.NORMAL)
         gui_objects['plot_btn'].config(state=tk.NORMAL)
         gui_objects['cdf_btn'].config(state=tk.NORMAL)
-        # gui_objects['call_type_btn'].config(state=tk.NORMAL)
         
     except Exception as e:
         messagebox.showerror("Помилка", f"Не вдалося завантажити дані: {str(e)}")
@@ -208,6 +206,42 @@ def load_data():
         original_values = np.array([])
         call_types = np.array([])
         original_call_types = np.array([])
+
+def generate_exponential_samples():
+    global values, original_values, call_types, original_call_types
+    lambda_param = gui_objects['lambda_var'].get()
+    if lambda_param <= 0:
+        messagebox.showerror("Помилка", "Параметр λ має бути додатним")
+        return
+    
+    sample_sizes = [20, 50, 100, 400, 1000, 2000, 5000]
+    selected_size = simpledialog.askinteger("Обсяг вибірки", "Виберіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
+                                           minvalue=20, maxvalue=5000)
+    
+    if selected_size not in sample_sizes:
+        messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням")
+        return
+    
+    # Метод зворотної функції для експоненціального розподілу: F(x) = 1 - e^(-λx), x = -ln(1-U)/λ
+    U = np.random.uniform(0, 1, selected_size)
+    values = -np.log(1 - U) / lambda_param
+    call_types = np.array(['Невідомо'] * len(values))
+    
+    original_values = values.copy()
+    original_call_types = call_types.copy()
+    
+    update_statistics()
+    update_characteristics()
+    update_data_box()
+    update_histogram()
+    update_distribution_plot(values, gui_objects)
+    
+    for btn in gui_objects['editing_buttons']:
+        btn.config(state=tk.NORMAL)
+    gui_objects['plot_btn'].config(state=tk.NORMAL)
+    gui_objects['cdf_btn'].config(state=tk.NORMAL)
+    
+    messagebox.showinfo("Генерація", f"Згенеровано вибірку обсягом {selected_size} з експоненціального розподілу (λ={lambda_param})")
 
 def update_histogram():
     global values 
@@ -230,12 +264,11 @@ def update_histogram():
     hist, bins, _ = gui_objects['hist_ax'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True)
     gui_objects['hist_ax'].set_title('Гістограма часу очікування')
     
-    # Побудова функції щільності, якщо чекбокс увімкнено
     if gui_objects['density_var'].get():
         mean, std = np.mean(values), np.std(values)
         x = np.linspace(min(values), max(values), 100)
         density = norm.pdf(x, mean, std)
-        gui_objects['hist_ax'].plot(x, density, 'r-', label='Щільність')  # Виправлено тут
+        gui_objects['hist_ax'].plot(x, density, 'r-', label='Щільність')
         gui_objects['hist_ax'].legend()
     
     x_min, x_max = np.min(values), np.max(values)
@@ -603,4 +636,5 @@ def initialize_logic(objects):
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)
     gui_objects['refresh_graph_button'].config(command=update_histogram)
     gui_objects['update_graph_btn'].config(command=lambda: update_distribution_plot(values, gui_objects))
+    gui_objects['generate_button'].config(command=generate_exponential_samples)
     update_distribution_plot(values, gui_objects)
