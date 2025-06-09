@@ -207,26 +207,103 @@ def load_data():
         call_types = np.array([])
         original_call_types = np.array([])
 
-def generate_exponential_samples():
+def generate_samples():
     global values, original_values, call_types, original_call_types
-    lambda_param = gui_objects['lambda_var'].get()
-    if lambda_param <= 0:
-        messagebox.showerror("Помилка", "Параметр λ має бути додатним")
-        return
-    
     sample_sizes = [20, 50, 100, 400, 1000, 2000, 5000]
     selected_size = simpledialog.askinteger("Обсяг вибірки", "Виберіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
-                                           minvalue=20, maxvalue=5000)
+                                           minvalue=20, maxvalue=5000, parent=gui_objects['root'])
     
     if selected_size not in sample_sizes:
-        messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням")
+        messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням", parent=gui_objects['root'])
         return
     
-    # Метод зворотної функції для експоненціального розподілу: F(x) = 1 - e^(-λx), x = -ln(1-U)/λ
-    U = np.random.uniform(0, 1, selected_size)
-    values = -np.log(1 - U) / lambda_param
-    call_types = np.array(['Невідомо'] * len(values))
+    # Create a custom dialog for distribution selection
+    dialog = tk.Toplevel(gui_objects['root'])
+    dialog.title("Вибір розподілу")
+    dialog.geometry("300x300")
+    dialog.transient(gui_objects['root'])  # Make dialog stay on top of the main window
+    dialog.grab_set()  # Ensure dialog captures all events
     
+    tk.Label(dialog, text="Оберіть розподіл:").pack(pady=10)
+    
+    selected_distribution = tk.StringVar(value="")
+    
+    def set_distribution(dist):
+        selected_distribution.set(dist)
+        dialog.destroy()
+    
+    # Buttons for each distribution
+    tk.Button(dialog, text="Нормальний", command=lambda: set_distribution("normal")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Експоненціальний", command=lambda: set_distribution("exponential")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Вейбулла", command=lambda: set_distribution("weibull")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Рівномірний", command=lambda: set_distribution("uniform")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Релея", command=lambda: set_distribution("rayleigh")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Скасувати", command=dialog.destroy).pack(fill=tk.X, padx=20, pady=10)
+    
+    dialog.wait_window()  # Wait for the dialog to close
+    
+    distribution = selected_distribution.get()
+    if not distribution:
+        return  # User canceled the dialog
+    
+    if distribution == 'normal':
+        mean = simpledialog.askfloat("Нормальний розподіл", "Введіть середнє значення (μ):", initialvalue=0.0, parent=gui_objects['root'])
+        if mean is None:
+            return
+        std = simpledialog.askfloat("Нормальний розподіл", "Введіть стандартне відхилення (σ):", minvalue=0.0, initialvalue=1.0, parent=gui_objects['root'])
+        if std is None:
+            return
+        if std <= 0:
+            messagebox.showerror("Помилка", "Стандартне відхилення має бути додатним", parent=gui_objects['root'])
+            return
+        values = np.random.normal(mean, std, selected_size)
+        dist_name = f"Нормальний (μ={mean:.2f}, σ={std:.2f})"
+    
+    elif distribution == 'exponential':
+        lambda_param = gui_objects['lambda_var'].get()
+        if lambda_param <= 0:
+            messagebox.showerror("Помилка", "Параметр λ має бути додатним", parent=gui_objects['root'])
+            return
+        values = expon.rvs(scale=1/lambda_param, size=selected_size)
+        dist_name = f"Експоненціальний (λ={lambda_param:.2f})"
+    
+    elif distribution == 'weibull':
+        shape = simpledialog.askfloat("Розподіл Вейбулла", "Введіть параметр форми (k):", minvalue=0.0, initialvalue=1.0, parent=gui_objects['root'])
+        if shape is None:
+            return
+        scale = simpledialog.askfloat("Розподіл Вейбулла", "Введіть параметр масштабу (λ):", minvalue=0.0, initialvalue=1.0, parent=gui_objects['root'])
+        if scale is None:
+            return
+        if shape <= 0 or scale <= 0:
+            messagebox.showerror("Помилка", "Параметри k та λ мають бути додатними", parent=gui_objects['root'])
+            return
+        values = weibull_min.rvs(shape, scale=scale, size=selected_size)
+        dist_name = f"Вейбулла (k={shape:.2f}, λ={scale:.2f})"
+    
+    elif distribution == 'uniform':
+        a = simpledialog.askfloat("Рівномірний розподіл", "Введіть нижню межу (a):", initialvalue=0.0, parent=gui_objects['root'])
+        if a is None:
+            return
+        b = simpledialog.askfloat("Рівномірний розподіл", "Введіть верхню межу (b):", initialvalue=1.0, parent=gui_objects['root'])
+        if b is None:
+            return
+        if b <= a:
+            messagebox.showerror("Помилка", "Верхня межа (b) має бути більшою за нижню межу (a)", parent=gui_objects['root'])
+            return
+        values = uniform.rvs(loc=a, scale=b-a, size=selected_size)
+        dist_name = f"Рівномірний (a={a:.2f}, b={b:.2f})"
+    
+    elif distribution == 'rayleigh':
+        sigma = simpledialog.askfloat("Розподіл Релея", "Введіть параметр масштабу (σ):", minvalue=0.0, initialvalue=1.0, parent=gui_objects['root'])
+        if sigma is None:
+            return
+        if sigma <= 0:
+            messagebox.showerror("Помилка", "Параметр σ має бути додатним", parent=gui_objects['root'])
+            return
+        values = rayleigh.rvs(scale=sigma, size=selected_size)
+        dist_name = f"Релея (σ={sigma:.2f})"
+    
+    call_types = np.array(['Невідомо'] * len(values))
     original_values = values.copy()
     original_call_types = call_types.copy()
     
@@ -241,7 +318,7 @@ def generate_exponential_samples():
     gui_objects['plot_btn'].config(state=tk.NORMAL)
     gui_objects['cdf_btn'].config(state=tk.NORMAL)
     
-    messagebox.showinfo("Генерація", f"Згенеровано вибірку обсягом {selected_size} з експоненціального розподілу (λ={lambda_param})")
+    messagebox.showinfo("Генерація", f"Згенеровано вибірку обсягом {selected_size} з розподілу {dist_name}", parent=gui_objects['root'])
 
 def update_histogram():
     global values 
@@ -636,5 +713,5 @@ def initialize_logic(objects):
     gui_objects['cdf_btn'].config(command=plot_exponential_distribution)
     gui_objects['refresh_graph_button'].config(command=update_histogram)
     gui_objects['update_graph_btn'].config(command=lambda: update_distribution_plot(values, gui_objects))
-    gui_objects['generate_button'].config(command=generate_exponential_samples)
+    gui_objects['generate_button'].config(command=generate_samples)
     update_distribution_plot(values, gui_objects)

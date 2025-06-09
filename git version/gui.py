@@ -45,7 +45,7 @@ def create_gui(root):
     lambda_entry = tk.Entry(scrollable_frame, textvariable=lambda_var)
     lambda_entry.pack()
 
-    generate_button = tk.Button(scrollable_frame, text="Згенерувати вибірки")
+    generate_button = tk.Button(scrollable_frame, text="Згенерувати вибірки (Розподіли)")
     generate_button.pack(fill=tk.X, pady=5)
 
     bin_label = tk.Label(scrollable_frame, text="Введіть кількість класів для гістограми:")
@@ -136,6 +136,7 @@ def create_gui(root):
     editing_buttons.append(save_btn)
 
     fig, hist_ax = plt.subplots(figsize=(8, 6))
+
     hist_canvas = FigureCanvasTkAgg(fig, master=tab1)
     hist_canvas.get_tk_widget().pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -178,43 +179,46 @@ def create_gui(root):
     dist_info_scroll.pack(side=tk.RIGHT, fill=tk.Y)
     dist_info_text.config(yscrollcommand=dist_info_scroll.set)
 
+
+
     return {
-        'dist_info_text': dist_info_text,
-        'bin_count_var': bin_count_var,
-        'info_text': info_text,
-        'editing_buttons': editing_buttons,
-        'plot_btn': plot_btn,
-        'cdf_btn': cdf_btn,
-        'char_table': char_table,
-        'data_box': data_box,
-        'fig': fig,
-        'hist_ax': hist_ax,
-        'hist_canvas': hist_canvas,
-        'tab2': tab2,
-        'tab3': tab3,
-        'tab5': tab5,
-        'load_button': load_button,
-        'update_button': update_button,
-        'standardize_btn': standardize_btn,
-        'log_btn': log_btn,
-        'shift_btn': shift_btn,
-        'outliers_btn': outliers_btn,
-        'outliers_skew_btn': outliers_skew_btn,
-        'reset_btn': reset_btn,
-        'save_btn': save_btn,
-        'confidence_var': confidence_var,
-        'precision_var': precision_var,
-        'refresh_graph_button': refresh_graph_button,
-        'normal_var': normal_var,
-        'exponential_var': exponential_var,
-        'weibull_var': weibull_var,
-        'uniform_var': uniform_var,
-        'rayleigh_var': rayleigh_var,
-        'update_graph_btn': update_graph_btn,
-        'fig_dist': fig_dist,
-        'ax_dist': ax_dist,
-        'dist_canvas': dist_canvas,
-        'density_var': density_var,
-        'lambda_var': lambda_var,
-        'generate_button': generate_button
-    }
+            'dist_info_text': dist_info_text,
+            'bin_count_var': bin_count_var,
+            'info_text': info_text,
+            'editing_buttons': editing_buttons,
+            'plot_btn': plot_btn,
+            'cdf_btn': cdf_btn,
+            'char_table': char_table,
+            'data_box': data_box,
+            'fig': fig,
+            'hist_ax': hist_ax,
+            'hist_canvas': hist_canvas,
+            'tab2': tab2,
+            'tab3': tab3,
+            'tab5': tab5,
+            'load_button': load_button,
+            'update_button': update_button,
+            'standardize_btn': standardize_btn,
+            'log_btn': log_btn,
+            'shift_btn': shift_btn,
+            'outliers_btn': outliers_btn,
+            'outliers_skew_btn': outliers_skew_btn,
+            'reset_btn': reset_btn,
+            'save_btn': save_btn,
+            'confidence_var': confidence_var,
+            'precision_var': precision_var,
+            'refresh_graph_button': refresh_graph_button,
+            'normal_var': normal_var,
+            'exponential_var': exponential_var,
+            'weibull_var': weibull_var,
+            'uniform_var': uniform_var,
+            'rayleigh_var': rayleigh_var,
+            'update_graph_btn': update_graph_btn,
+            'fig_dist': fig_dist,
+            'ax_dist': ax_dist,
+            'dist_canvas': dist_canvas,
+            'density_var': density_var,
+            'lambda_var': lambda_var,
+            'generate_button': generate_button,
+            'root': root  # Add root window to gui_objects
+        }
