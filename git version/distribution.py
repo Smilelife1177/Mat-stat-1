@@ -1,6 +1,5 @@
 from scipy.stats import skew, kurtosis, variation, median_abs_deviation, norm, t, chi2, sem, kstest, expon, weibull_min, rayleigh, uniform, chi2_contingency, ttest_1samp
 import numpy as np
-from scipy.stats import norm, kstest, expon, weibull_min, rayleigh, uniform, chi2_contingency, ttest_1samp
 from tkinter import messagebox
 import tkinter as tk
 from tkinter import simpledialog
@@ -76,31 +75,38 @@ def update_distribution_plot(values, gui_objects):
         chi2_stat, p_value = chi2_contingency([hist, expected])[0:2]
         return chi2_stat, p_value
 
-    def calculate_t_test_bootstrap(data, sample_sizes=[20, 50, 100, 400, 1000, 2000, 5000], bootstrap_samples=1000, theta_0=None):
+    def calculate_t_test_bootstrap(data, sample_sizes=[20, 50, 100, 400, 1000, 2000, 5000], min_repetitions=200, max_repetitions=500):
+        if len(data) == 0:
+            return []
+        theta_0 = simpledialog.askfloat("T-тест", "Введіть гіпотетичне середнє значення (theta_0):", initialvalue=np.mean(data))
         if theta_0 is None:
-            theta_0 = simpledialog.askfloat("T-тест", "Введіть гіпотетичне середнє значення (theta_0):", initialvalue=np.mean(data))
-            if theta_0 is None:
-                return {}
-        results = {}
+            return []
+        num_repetitions = simpledialog.askinteger("T-тест", "Введіть кількість повторень для кожного обсягу вибірки:", minvalue=1, maxvalue=100, initialvalue=10)
+        if num_repetitions is None:
+            return []
+        results = []
         for n in sample_sizes:
             if n > len(data):
                 continue
-            t_stats = []
-            for _ in range(bootstrap_samples):
-                sample = np.random.choice(data, size=n, replace=True)
-                theta_hat = np.mean(sample)
-                std_err = np.std(sample, ddof=1) / np.sqrt(n)
-                if std_err != 0:
-                    t_stat = (theta_hat - theta_0) / std_err  # Змінено порядок (theta_hat - theta_0) для стандартного t-тесту
-                    t_stats.append(t_stat)
-            if t_stats:
-                mean_t = np.mean(t_stats)
-                std_t = np.std(t_stats, ddof=1)
-                critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
-                # Висновок про прийняття чи відхилення H0
-                conclusion = "H₀ приймається (середнє відповідає theta_0)" if abs(mean_t) < critical_t else "H₀ відхиляється (середнє не відповідає theta_0)"
-                results[n] = (mean_t, std_t, critical_t, conclusion)
+            for _ in range(num_repetitions):
+                # Randomly select number of bootstrap samples between 200 and 500
+                bootstrap_samples = np.random.randint(min_repetitions, max_repetitions + 1)
+                t_stats = []
+                for _ in range(bootstrap_samples):
+                    sample = np.random.choice(data, size=n, replace=True)
+                    theta_hat = np.mean(sample)
+                    std_err = np.std(sample, ddof=1) / np.sqrt(n)
+                    if std_err != 0:
+                        t_stat = (theta_hat - theta_0) / std_err
+                        t_stats.append(t_stat)
+                if t_stats:
+                    mean_t = np.mean(t_stats)
+                    std_t = np.std(t_stats, ddof=1)
+                    critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                    conclusion = "H₀ приймається (середнє відповідає theta_0)" if abs(mean_t) < critical_t else "H₀ відхиляється (середнє не відповідає theta_0)"
+                    results.append((n, mean_t, std_t, critical_t, conclusion, bootstrap_samples))
         return results
+
     # Flag to check if any distribution is plotted
     any_distribution_plotted = False
 
@@ -128,14 +134,13 @@ def update_distribution_plot(values, gui_objects):
                            f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                            f"{'Нормальний' if chi2_pval > 0.05 else 'Не нормальний'}\n")
 
-        # T-test with bootstrap for specific sample sizes
-        # T-test with bootstrap for specific sample sizes
+        # T-test with bootstrap
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
-            results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-            for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
-                results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+            results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
+            for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
+                results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
+                                   f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Exponential Distribution
     if gui_objects['exponential_var'].get():
@@ -170,14 +175,13 @@ def update_distribution_plot(values, gui_objects):
                                    f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                    f"{'Експоненціальний' if chi2_pval > 0.05 else 'Не експоненціальний'}\n")
 
-                # T-test with bootstrap for specific sample sizes
-                # T-test with bootstrap for specific sample sizes
+                # T-test with bootstrap
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
-                    results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-                    for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
-                        results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                        f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+                    results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
+                    for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
+                        results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
+                                           f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Weibull Distribution
     if gui_objects['weibull_var'].get():
@@ -219,14 +223,13 @@ def update_distribution_plot(values, gui_objects):
                                    f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                    f"{'Вейбулла' if chi2_pval > 0.05 else 'Не Вейбулла'}\n")
 
-                # T-test with bootstrap for specific sample sizes
-                # T-test with bootstrap for specific sample sizes
+                # T-test with bootstrap
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
-                    results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-                    for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
-                        results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                        f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+                    results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
+                    for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
+                        results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
+                                           f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
             except Exception as e:
                 messagebox.showerror("Помилка", f"Не вдалося підігнати розподіл Вейбулла: {str(e)}")
                 gui_objects['weibull_var'].set(False)
@@ -259,16 +262,15 @@ def update_distribution_plot(values, gui_objects):
                            f"Критичне значення = {critical_value:.4f}, "
                            f"{'Рівномірний' if ks_stat < critical_value else 'Не рівномірний'}\n"
                            f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
-                           f"{'Рівномірний' if chi2_pval > 0.05 else 'Не рівномірний'}\n")
+                           f"{'Рівномірний' if chi2_pval > 0.05 else 'Не рівнемірний'}\n")
 
-        # T-test with bootstrap for specific sample sizes
-        # T-test with bootstrap for specific sample sizes
+        # T-test with bootstrap
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
-            results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-            for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
-                results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+            results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
+            for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
+                results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
+                                   f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Rayleigh Distribution
     if gui_objects['rayleigh_var'].get():
@@ -297,14 +299,13 @@ def update_distribution_plot(values, gui_objects):
                                f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
                                f"{'Релея' if chi2_pval > 0.05 else 'Не Релея'}\n")
 
-            # T-test with bootstrap for specific sample sizes
-            # T-test with bootstrap for specific sample sizes
+            # T-test with bootstrap
             t_results = calculate_t_test_bootstrap(values)
             if t_results:
-                results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-                for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
-                    results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                    f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+                results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
+                for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
+                    results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
+                                       f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Update plot settings
     if any_distribution_plotted or gui_objects['normal_var'].get() or gui_objects['exponential_var'].get() or \
