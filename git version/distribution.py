@@ -105,6 +105,7 @@ def update_distribution_plot(values, gui_objects):
     any_distribution_plotted = False
 
     # Normal Distribution
+    # Normal Distribution
     if gui_objects['normal_var'].get():
         any_distribution_plotted = True
         mean, std = np.mean(values), np.std(values, ddof=1)
@@ -116,19 +117,18 @@ def update_distribution_plot(values, gui_objects):
         mean_ci = calculate_confidence_interval(values, "mean", confidence)
         std_ci = calculate_confidence_interval(values, "std", confidence)
         results_text.append(f"Нормальний розподіл:\n"
-                           f"  Оцінка середнього: {mean:.4f} (ДІ: [{mean_ci[0]:.4f}, {mean_ci[1]:.4f}])\n"
-                           f"  Оцінка стд. відхилення: {std:.4f} (ДІ: [{std_ci[0]:.4f}, {std_ci[1]:.4f}])\n")
+                        f"  Оцінка середнього: {mean:.4f} (ДІ: [{mean_ci[0]:.4f}, {mean_ci[1]:.4f}])\n"
+                        f"  Оцінка стд. відхилення: {std:.4f} (ДІ: [{std_ci[0]:.4f}, {std_ci[1]:.4f}])\n")
 
         # Goodness-of-fit tests
         ks_stat, ks_pval = kstest(values, 'norm', args=(mean, std))
         chi2_stat, chi2_pval = pearson_chi2_test(values, 'norm', (mean, std), bins)
         results_text.append(f"  Тест Колмогорова-Смірнова: Статистика = {ks_stat:.4f}, p-значення = {ks_pval:.4f}, "
-                           f"Критичне значення = {critical_value:.4f}, "
-                           f"{'Нормальний' if ks_stat < critical_value else 'Не нормальний'}\n"
-                           f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
-                           f"{'Нормальний' if chi2_pval > 0.05 else 'Не нормальний'}\n")
+                        f"Критичне значення = {critical_value:.4f}, "
+                        f"{'Нормальний' if ks_stat < critical_value else 'Не нормальний'}\n"
+                        f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
+                        f"{'Нормальний' if chi2_pval > 0.05 else 'Не нормальний'}\n")
 
-        # T-test with bootstrap for specific sample sizes
         # T-test with bootstrap for specific sample sizes
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
@@ -136,7 +136,30 @@ def update_distribution_plot(values, gui_objects):
             for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                 results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
                                 f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+        
+        # Multiple t-test runs
+        num_runs = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                        "Введіть кількість прогонів (1-1000):", 
+                                        minvalue=1, maxvalue=1000, initialvalue=10, 
+                                        parent=gui_objects['root'])
+        if num_runs:
+            sample_size = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                                "Введіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
+                                                minvalue=20, maxvalue=5000, initialvalue=100, 
+                                                parent=gui_objects['root'])
+            if sample_size in [20, 50, 100, 400, 1000, 2000, 5000]:
+                multi_t_result = run_multiple_t_tests(values, gui_objects, sample_size, num_runs)
+                if multi_t_result:
+                    results_text.append(f"  T-тест ({num_runs} прогонів, обсяг вибірки {sample_size}):\n"
+                                    f"    Середнє t = {multi_t_result['mean_t']:.4f}, "
+                                    f"Стд. відхилення t = {multi_t_result['std_t']:.4f}, "
+                                    f"Критичне t = {multi_t_result['critical_t']:.4f}, "
+                                    f"{multi_t_result['conclusion']}\n")
+            else:
+                messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням", 
+                                    parent=gui_objects['root'])
 
+    # Exponential Distribution
     # Exponential Distribution
     if gui_objects['exponential_var'].get():
         if np.any(values < 0):
@@ -159,18 +182,17 @@ def update_distribution_plot(values, gui_objects):
                 lambda_ci = (lambda_param - norm.ppf(1-(1-confidence)/2)*lambda_se,
                             lambda_param + norm.ppf(1-(1-confidence)/2)*lambda_se)
                 results_text.append(f"Експоненціальний розподіл:\n"
-                                   f"  Оцінка λ: {lambda_param:.4f} (ДІ: [{lambda_ci[0]:.4f}, {lambda_ci[1]:.4f}])\n")
+                                f"  Оцінка λ: {lambda_param:.4f} (ДІ: [{lambda_ci[0]:.4f}, {lambda_ci[1]:.4f}])\n")
 
                 # Goodness-of-fit tests
                 ks_stat, ks_pval = kstest(values, 'expon', args=(0, mean))
                 chi2_stat, chi2_pval = pearson_chi2_test(values, 'expon', (0, mean), bins)
                 results_text.append(f"  Тест Колмогорова-Смірнова: Статистика = {ks_stat:.4f}, p-значення = {ks_pval:.4f}, "
-                                   f"Критичне значення = {critical_value:.4f}, "
-                                   f"{'Експоненціальний' if ks_stat < critical_value else 'Не експоненціальний'}\n"
-                                   f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
-                                   f"{'Експоненціальний' if chi2_pval > 0.05 else 'Не експоненціальний'}\n")
+                                f"Критичне значення = {critical_value:.4f}, "
+                                f"{'Експоненціальний' if ks_stat < critical_value else 'Не експоненціальний'}\n"
+                                f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
+                                f"{'Експоненціальний' if chi2_pval > 0.05 else 'Не експоненціальний'}\n")
 
-                # T-test with bootstrap for specific sample sizes
                 # T-test with bootstrap for specific sample sizes
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
@@ -178,8 +200,30 @@ def update_distribution_plot(values, gui_objects):
                     for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                         results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
                                         f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+                
+                # Multiple t-test runs
+                num_runs = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                                "Введіть кількість прогонів (1-1000):", 
+                                                minvalue=1, maxvalue=1000, initialvalue=10, 
+                                                parent=gui_objects['root'])
+                if num_runs:
+                    sample_size = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                                        "Введіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
+                                                        minvalue=20, maxvalue=5000, initialvalue=100, 
+                                                        parent=gui_objects['root'])
+                    if sample_size in [20, 50, 100, 400, 1000, 2000, 5000]:
+                        multi_t_result = run_multiple_t_tests(values, gui_objects, sample_size, num_runs)
+                        if multi_t_result:
+                            results_text.append(f"  T-тест ({num_runs} прогонів, розмір вибірки {sample_size}):\n"
+                                            f"    Середнє t = {multi_t_result['mean_t']:.4f}, "
+                                            f"Стд. відхилення t = {multi_t_result['std_t']:.4f}, "
+                                            f"Критичне t = {multi_t_result['critical_t']:.4f}, "
+                                            f"{multi_t_result['conclusion']}\n")
+                    else:
+                        messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням", 
+                                            parent=gui_objects['root'])
 
-    # Weibull Distribution
+# Weibull Distribution
     if gui_objects['weibull_var'].get():
         if np.any(values < 0):
             messagebox.showerror("Помилка", "Розподіл Вейбулла можливий лише для невід'ємних значень")
@@ -207,19 +251,18 @@ def update_distribution_plot(values, gui_objects):
                 shape_ci = (np.percentile(shape_samples, 2.5), np.percentile(shape_samples, 97.5))
                 scale_ci = (np.percentile(scale_samples, 2.5), np.percentile(scale_samples, 97.5))
                 results_text.append(f"Розподіл Вейбулла:\n"
-                                   f"  Оцінка форми (k): {shape:.4f} (ДІ: [{shape_ci[0]:.4f}, {shape_ci[1]:.4f}])\n"
-                                   f"  Оцінка масштабу (λ): {scale:.4f} (ДІ: [{scale_ci[0]:.4f}, {scale_ci[1]:.4f}])\n")
+                                f"  Оцінка форми (k): {shape:.4f} (ДІ: [{shape_ci[0]:.4f}, {shape_ci[1]:.4f}])\n"
+                                f"  Оцінка масштабу (λ): {scale:.4f} (ДІ: [{scale_ci[0]:.4f}, {scale_ci[1]:.4f}])\n")
 
                 # Goodness-of-fit tests
                 ks_stat, ks_pval = kstest(values, weibull_min.cdf, args=(shape, loc, scale))
                 chi2_stat, chi2_pval = pearson_chi2_test(values, 'weibull_min', (shape, loc, scale), bins)
                 results_text.append(f"  Тест Колмогорова-Смірнова: Статистика = {ks_stat:.4f}, p-значення = {ks_pval:.4f}, "
-                                   f"Критичне значення = {critical_value:.4f}, "
-                                   f"{'Вейбулла' if ks_stat < critical_value else 'Не Вейбулла'}\n"
-                                   f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
-                                   f"{'Вейбулла' if chi2_pval > 0.05 else 'Не Вейбулла'}\n")
+                                f"Критичне значення = {critical_value:.4f}, "
+                                f"{'Вейбулла' if ks_stat < critical_value else 'Не Вейбулла'}\n"
+                                f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
+                                f"{'Вейбулла' if chi2_pval > 0.05 else 'Не Вейбулла'}\n")
 
-                # T-test with bootstrap for specific sample sizes
                 # T-test with bootstrap for specific sample sizes
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
@@ -227,10 +270,33 @@ def update_distribution_plot(values, gui_objects):
                     for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                         results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
                                         f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+                
+                # Multiple t-test runs
+                num_runs = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                                "Введіть кількість прогонів (1-1000):", 
+                                                minvalue=1, maxvalue=1000, initialvalue=10, 
+                                                parent=gui_objects['root'])
+                if num_runs:
+                    sample_size = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                                        "Введіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
+                                                        minvalue=20, maxvalue=5000, initialvalue=100, 
+                                                        parent=gui_objects['root'])
+                    if sample_size in [20, 50, 100, 400, 1000, 2000, 5000]:
+                        multi_t_result = run_multiple_t_tests(values, gui_objects, sample_size, num_runs)
+                        if multi_t_result:
+                            results_text.append(f"  T-тест ({num_runs} прогонів, розмір вибірки {sample_size}):\n"
+                                            f"    Середнє t = {multi_t_result['mean_t']:.4f}, "
+                                            f"Стд. відхилення t = {multi_t_result['std_t']:.4f}, "
+                                            f"Критичне t = {multi_t_result['critical_t']:.4f}, "
+                                            f"{multi_t_result['conclusion']}\n")
+                    else:
+                        messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням", 
+                                            parent=gui_objects['root'])
             except Exception as e:
                 messagebox.showerror("Помилка", f"Не вдалося підігнати розподіл Вейбулла: {str(e)}")
                 gui_objects['weibull_var'].set(False)
 
+    # Uniform Distribution
     # Uniform Distribution
     if gui_objects['uniform_var'].get():
         any_distribution_plotted = True
@@ -249,19 +315,18 @@ def update_distribution_plot(values, gui_objects):
         loc_ci = (loc - norm.ppf(1-(1-confidence)/2)*loc_se, loc + norm.ppf(1-(1-confidence)/2)*loc_se)
         scale_ci = (scale - norm.ppf(1-(1-confidence)/2)*scale_se, scale + norm.ppf(1-(1-confidence)/2)*scale_se)
         results_text.append(f"Рівномірний розподіл:\n"
-                           f"  Оцінка нижньої межі (a): {loc:.4f} (ДІ: [{loc_ci[0]:.4f}, {loc_ci[1]:.4f}])\n"
-                           f"  Оцінка масштабу (b-a): {scale:.4f} (ДІ: [{scale_ci[0]:.4f}, {scale_ci[1]:.4f}])\n")
+                        f"  Оцінка нижньої межі (a): {loc:.4f} (ДІ: [{loc_ci[0]:.4f}, {loc_ci[1]:.4f}])\n"
+                        f"  Оцінка масштабу (b-a): {scale:.4f} (ДІ: [{scale_ci[0]:.4f}, {scale_ci[1]:.4f}])\n")
 
         # Goodness-of-fit tests
         ks_stat, ks_pval = kstest(values, 'uniform', args=(loc, scale))
         chi2_stat, chi2_pval = pearson_chi2_test(values, 'uniform', (loc, scale), bins)
         results_text.append(f"  Тест Колмогорова-Смірнова: Статистика = {ks_stat:.4f}, p-значення = {ks_pval:.4f}, "
-                           f"Критичне значення = {critical_value:.4f}, "
-                           f"{'Рівномірний' if ks_stat < critical_value else 'Не рівномірний'}\n"
-                           f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
-                           f"{'Рівномірний' if chi2_pval > 0.05 else 'Не рівномірний'}\n")
+                        f"Критичне значення = {critical_value:.4f}, "
+                        f"{'Рівномірний' if ks_stat < critical_value else 'Не рівномірний'}\n"
+                        f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
+                        f"{'Рівномірний' if chi2_pval > 0.05 else 'Не рівномірний'}\n")
 
-        # T-test with bootstrap for specific sample sizes
         # T-test with bootstrap for specific sample sizes
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
@@ -269,7 +334,30 @@ def update_distribution_plot(values, gui_objects):
             for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                 results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
                                 f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+        
+        # Multiple t-test runs
+        num_runs = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                        "Введіть кількість прогонів (1-1000):", 
+                                        minvalue=1, maxvalue=1000, initialvalue=10, 
+                                        parent=gui_objects['root'])
+        if num_runs:
+            sample_size = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                                "Введіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
+                                                minvalue=20, maxvalue=5000, initialvalue=100, 
+                                                parent=gui_objects['root'])
+            if sample_size in [20, 50, 100, 400, 1000, 2000, 5000]:
+                multi_t_result = run_multiple_t_tests(values, gui_objects, sample_size, num_runs)
+                if multi_t_result:
+                    results_text.append(f"  T-тест ({num_runs} прогонів, розмір вибірки {sample_size}):\n"
+                                    f"    Середнє t = {multi_t_result['mean_t']:.4f}, "
+                                    f"Стд. відхилення t = {multi_t_result['std_t']:.4f}, "
+                                    f"Критичне t = {multi_t_result['critical_t']:.4f}, "
+                                    f"{multi_t_result['conclusion']}\n")
+            else:
+                messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням", 
+                                    parent=gui_objects['root'])
 
+    # Rayleigh Distribution
     # Rayleigh Distribution
     if gui_objects['rayleigh_var'].get():
         if np.any(values < 0):
@@ -286,18 +374,17 @@ def update_distribution_plot(values, gui_objects):
             sigma_se = sigma / np.sqrt(2 * n)
             sigma_ci = (sigma - norm.ppf(1-(1-confidence)/2)*sigma_se, sigma + norm.ppf(1-(1-confidence)/2)*sigma_se)
             results_text.append(f"Розподіл Релея:\n"
-                               f"  Оцінка масштабу (σ): {sigma:.4f} (ДІ: [{sigma_ci[0]:.4f}, {sigma_ci[1]:.4f}])\n")
+                            f"  Оцінка масштабу (σ): {sigma:.4f} (ДІ: [{sigma_ci[0]:.4f}, {sigma_ci[1]:.4f}])\n")
 
             # Goodness-of-fit tests
             ks_stat, ks_pval = kstest(values, 'rayleigh', args=(0, sigma))
             chi2_stat, chi2_pval = pearson_chi2_test(values, 'rayleigh', (0, sigma), bins)
             results_text.append(f"  Тест Колмогорова-Смірнова: Статистика = {ks_stat:.4f}, p-значення = {ks_pval:.4f}, "
-                               f"Критичне значення = {critical_value:.4f}, "
-                               f"{'Релея' if ks_stat < critical_value else 'Не Релея'}\n"
-                               f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
-                               f"{'Релея' if chi2_pval > 0.05 else 'Не Релея'}\n")
+                            f"Критичне значення = {critical_value:.4f}, "
+                            f"{'Релея' if ks_stat < critical_value else 'Не Релея'}\n"
+                            f"  Тест Пірсона: Статистика = {chi2_stat:.4f}, p-значення = {chi2_pval:.4f}, "
+                            f"{'Релея' if chi2_pval > 0.05 else 'Не Релея'}\n")
 
-            # T-test with bootstrap for specific sample sizes
             # T-test with bootstrap for specific sample sizes
             t_results = calculate_t_test_bootstrap(values)
             if t_results:
@@ -305,6 +392,28 @@ def update_distribution_plot(values, gui_objects):
                 for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                     results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
                                     f"Критичне t = {critical_t:.4f}, {conclusion}\n")
+            
+            # Multiple t-test runs
+            num_runs = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                            "Введіть кількість прогонів (1-1000):", 
+                                            minvalue=1, maxvalue=1000, initialvalue=10, 
+                                            parent=gui_objects['root'])
+            if num_runs:
+                sample_size = simpledialog.askinteger("T-тест (багато прогонів)", 
+                                                    "Введіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
+                                                    minvalue=20, maxvalue=5000, initialvalue=100, 
+                                                    parent=gui_objects['root'])
+                if sample_size in [20, 50, 100, 400, 1000, 2000, 5000]:
+                    multi_t_result = run_multiple_t_tests(values, gui_objects, sample_size, num_runs)
+                    if multi_t_result:
+                        results_text.append(f"  T-тест ({num_runs} прогонів, розмір вибірки {sample_size}):\n"
+                                        f"    Середнє t = {multi_t_result['mean_t']:.4f}, "
+                                        f"Стд. відхилення t = {multi_t_result['std_t']:.4f}, "
+                                        f"Критичне t = {multi_t_result['critical_t']:.4f}, "
+                                        f"{multi_t_result['conclusion']}\n")
+                else:
+                    messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням", 
+                                        parent=gui_objects['root'])
 
     # Update plot settings
     if any_distribution_plotted or gui_objects['normal_var'].get() or gui_objects['exponential_var'].get() or \
@@ -327,3 +436,140 @@ def update_distribution_plot(values, gui_objects):
             gui_objects['dist_info_text'].insert(tk.END, "Жоден розподіл не вибрано або не підходить для даних.")
     except KeyError:
         messagebox.showerror("Помилка", "Текстове поле для результатів розподілів не знайдено. Перевірте конфігурацію GUI.")
+
+
+
+def run_multiple_t_tests(data, gui_objects, sample_size, num_runs, theta_0=None):
+    """
+    Run multiple t-tests on different samples from the selected distribution.
+    
+    Parameters:
+    - data: Input data array to estimate distribution parameters
+    - gui_objects: Dictionary of GUI elements
+    - sample_size: Size of each sample
+    - num_runs: Number of t-test runs
+    - theta_0: Hypothetical mean for t-test (if None, prompt user)
+    
+    Returns:
+    - Dictionary with results: mean_t, std_t, critical_t, conclusion
+    """
+    if theta_0 is None:
+        theta_0 = simpledialog.askfloat("T-тест (багато прогонів)", 
+                                      "Введіть гіпотетичне середнє значення (theta_0):", 
+                                      initialvalue=np.mean(data), 
+                                      parent=gui_objects['root'])
+        if theta_0 is None:
+            return None
+    
+    # Determine the selected distribution
+    dist_vars = {
+        'normal': gui_objects['normal_var'].get(),
+        'exponential': gui_objects['exponential_var'].get(),
+        'weibull': gui_objects['weibull_var'].get(),
+        'uniform': gui_objects['uniform_var'].get(),
+        'rayleigh': gui_objects['rayleigh_var'].get()
+    }
+    selected_dist = next((dist for dist, var in dist_vars.items() if var), None)
+    if not selected_dist:
+        messagebox.showerror("Помилка", "Оберіть розподіл у вкладці 'Гістограма та розподіли'", 
+                            parent=gui_objects['root'])
+        return None
+    
+    t_stats = []
+    confidence = gui_objects['confidence_var'].get() / 100
+    
+    # Generate samples and compute t-statistics based on the selected distribution
+    if selected_dist == 'normal':
+        mean, std = np.mean(data), np.std(data, ddof=1)
+        if std <= 0:
+            messagebox.showerror("Помилка", "Стандартне відхилення має бути додатним", 
+                                parent=gui_objects['root'])
+            return None
+        for _ in range(num_runs):
+            sample = np.random.normal(mean, std, sample_size)
+            theta_hat = np.mean(sample)
+            std_err = np.std(sample, ddof=1) / np.sqrt(sample_size)
+            if std_err != 0:
+                t_stat = (theta_hat - theta_0) / std_err
+                t_stats.append(t_stat)
+    
+    elif selected_dist == 'exponential':
+        lambda_param = gui_objects['lambda_var'].get()
+        if lambda_param <= 0:
+            messagebox.showerror("Помилка", "Параметр λ має бути додатним", 
+                                parent=gui_objects['root'])
+            return None
+        for _ in range(num_runs):
+            sample = expon.rvs(scale=1/lambda_param, size=sample_size)
+            theta_hat = np.mean(sample)
+            std_err = np.std(sample, ddof=1) / np.sqrt(sample_size)
+            if std_err != 0:
+                t_stat = (theta_hat - theta_0) / std_err
+                t_stats.append(t_stat)
+    
+    elif selected_dist == 'weibull':
+        try:
+            shape, loc, scale = weibull_min.fit(data, floc=0)
+            if shape <= 0 or scale <= 0:
+                messagebox.showerror("Помилка", "Параметри k та λ мають бути додатними", 
+                                    parent=gui_objects['root'])
+                return None
+            for _ in range(num_runs):
+                sample = weibull_min.rvs(shape, loc=loc, scale=scale, size=sample_size)
+                theta_hat = np.mean(sample)
+                std_err = np.std(sample, ddof=1) / np.sqrt(sample_size)
+                if std_err != 0:
+                    t_stat = (theta_hat - theta_0) / std_err
+                    t_stats.append(t_stat)
+        except Exception as e:
+            messagebox.showerror("Помилка", f"Не вдалося підігнати розподіл Вейбулла: {str(e)}", 
+                                parent=gui_objects['root'])
+            return None
+    
+    elif selected_dist == 'uniform':
+        x_min, x_max = np.min(data), np.max(data)
+        if x_max <= x_min:
+            messagebox.showerror("Помилка", "Верхня межа (b) має бути більшою за нижню межу (a)", 
+                                parent=gui_objects['root'])
+            return None
+        for _ in range(num_runs):
+            sample = uniform.rvs(loc=x_min, scale=x_max-x_min, size=sample_size)
+            theta_hat = np.mean(sample)
+            std_err = np.std(sample, ddof=1) / np.sqrt(sample_size)
+            if std_err != 0:
+                t_stat = (theta_hat - theta_0) / std_err
+                t_stats.append(t_stat)
+    
+    elif selected_dist == 'rayleigh':
+        sigma = np.sqrt(np.mean(data**2) / 2)
+        if sigma <= 0:
+            messagebox.showerror("Помилка", "Параметр σ має бути додатним", 
+                                parent=gui_objects['root'])
+            return None
+        for _ in range(num_runs):
+            sample = rayleigh.rvs(scale=sigma, size=sample_size)
+            theta_hat = np.mean(sample)
+            std_err = np.std(sample, ddof=1) / np.sqrt(sample_size)
+            if std_err != 0:
+                t_stat = (theta_hat - theta_0) / std_err
+                t_stats.append(t_stat)
+    
+    if not t_stats:
+        messagebox.showerror("Помилка", "Не вдалося обчислити t-статистики", 
+                            parent=gui_objects['root'])
+        return None
+    
+    # Compute results
+    mean_t = np.mean(t_stats)
+    std_t = np.std(t_stats, ddof=1)
+    critical_t = t.ppf(1 - (1 - confidence) / 2, df=sample_size-1)
+    conclusion = "H₀ приймається (середнє відповідає theta_0)" if abs(mean_t) < critical_t else "H₀ відхиляється (середнє не відповідає theta_0)"
+    
+    return {
+        'mean_t': mean_t,
+        'std_t': std_t,
+        'critical_t': critical_t,
+        'conclusion': conclusion,
+        'num_runs': num_runs,
+        'sample_size': sample_size
+    }
