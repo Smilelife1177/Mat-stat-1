@@ -3,6 +3,7 @@ import numpy as np
 from tkinter import messagebox
 import tkinter as tk
 from tkinter import simpledialog
+from collections import Counter
 
 def calculate_confidence_interval(data, statistic, confidence=0.95):
     n = len(data)
@@ -85,6 +86,8 @@ def update_distribution_plot(values, gui_objects):
         if num_repetitions is None:
             return []
         results = []
+        sample_size_summaries = {n: {'biases': [], 'ks_stats': [], 'qualities': []} for n in sample_sizes}
+
         for n in sample_sizes:
             if n > len(data):
                 continue
@@ -104,7 +107,29 @@ def update_distribution_plot(values, gui_objects):
                     std_t = np.std(t_stats, ddof=1)
                     critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
                     conclusion = "H₀ приймається (середнє відповідає theta_0)" if abs(mean_t) < critical_t else "H₀ відхиляється (середнє не відповідає theta_0)"
-                    results.append((n, mean_t, std_t, critical_t, conclusion, bootstrap_samples))
+                    # Evaluate modeling quality using KS test
+                    bias = mean_t  # Expected mean of t-statistics is 0 under H0
+                    ks_stat, _ = kstest(t_stats, 't', args=(n-1,))
+                    quality = "Висока" if ks_stat < 0.1 else "Середня" if ks_stat < 0.2 else "Низька"
+                    results.append((n, mean_t, std_t, critical_t, conclusion, bootstrap_samples, bias, ks_stat, quality))
+                    # Store for summary
+                    sample_size_summaries[n]['biases'].append(bias)
+                    sample_size_summaries[n]['ks_stats'].append(ks_stat)
+                    sample_size_summaries[n]['qualities'].append(quality)
+
+        # Generate summary for all sample sizes at the end
+        summary_lines = ["==== Підсумок для всіх вибірок ===="]
+        for n in sample_sizes:
+            if sample_size_summaries[n]['biases']:
+                avg_bias = np.mean(sample_size_summaries[n]['biases'])
+                avg_ks_stat = np.mean(sample_size_summaries[n]['ks_stats'])
+                most_common_quality = Counter(sample_size_summaries[n]['qualities']).most_common(1)[0][0]
+                summary_lines.append(f"Вибірка {n}: Середнє зміщення = {avg_bias:.4f}, "
+                                     f"Середня KS-статистика = {avg_ks_stat:.4f}, "
+                                     f"Найпоширеніша якість = {most_common_quality}")
+        summary_lines.append("==============================")
+        results.append((None, None, None, None, "\n".join(summary_lines), None, None, None, None))
+
         return results
 
     # Flag to check if any distribution is plotted
@@ -138,9 +163,14 @@ def update_distribution_plot(values, gui_objects):
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
             results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
-            for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
-                results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
-                                   f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
+            for result in t_results:
+                if result[1] is not None:  # Regular result
+                    n, mean_t, std_t, critical_t, conclusion, repetitions, bias, ks_stat, quality = result
+                    results_text.append(f"    Обсяг вибірки {n} : Середнє t = {mean_t:.4f}, "
+                                       f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}, "
+                                       f"Зміщення = {bias:.4f}, KS-статистика = {ks_stat:.4f}, Якість моделювання = {quality}\n")
+                else:  # Summary result
+                    results_text.append(f"    {result[4]}\n")
 
     # Exponential Distribution
     if gui_objects['exponential_var'].get():
@@ -179,9 +209,14 @@ def update_distribution_plot(values, gui_objects):
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
                     results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
-                    for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
-                        results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
-                                           f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
+                    for result in t_results:
+                        if result[1] is not None:  # Regular result
+                            n, mean_t, std_t, critical_t, conclusion, repetitions, bias, ks_stat, quality = result
+                            results_text.append(f"    Обсяг вибірки {n} : Середнє t = {mean_t:.4f}, "
+                                               f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}, "
+                                               f"Зміщення = {bias:.4f}, KS-статистика = {ks_stat:.4f}, Якість моделювання = {quality}\n")
+                        else:  # Summary result
+                            results_text.append(f"    {result[4]}\n")
 
     # Weibull Distribution
     if gui_objects['weibull_var'].get():
@@ -227,9 +262,14 @@ def update_distribution_plot(values, gui_objects):
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
                     results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
-                    for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
-                        results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
-                                           f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
+                    for result in t_results:
+                        if result[1] is not None:  # Regular result
+                            n, mean_t, std_t, critical_t, conclusion, repetitions, bias, ks_stat, quality = result
+                            results_text.append(f"    Обсяг вибірки {n} : Середнє t = {mean_t:.4f}, "
+                                               f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}, "
+                                               f"Зміщення = {bias:.4f}, KS-статистика = {ks_stat:.4f}, Якість моделювання = {quality}\n")
+                        else:  # Summary result
+                            results_text.append(f"    {result[4]}\n")
             except Exception as e:
                 messagebox.showerror("Помилка", f"Не вдалося підігнати розподіл Вейбулла: {str(e)}")
                 gui_objects['weibull_var'].set(False)
@@ -268,9 +308,14 @@ def update_distribution_plot(values, gui_objects):
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
             results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
-            for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
-                results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
-                                   f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
+            for result in t_results:
+                if result[1] is not None:  # Regular result
+                    n, mean_t, std_t, critical_t, conclusion, repetitions, bias, ks_stat, quality = result
+                    results_text.append(f"    Обсяг вибірки {n} : Середнє t = {mean_t:.4f}, "
+                                       f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}, "
+                                       f"Зміщення = {bias:.4f}, KS-статистика = {ks_stat:.4f}, Якість моделювання = {quality}\n")
+                else:  # Summary result
+                    results_text.append(f"    {result[4]}\n")
 
     # Rayleigh Distribution
     if gui_objects['rayleigh_var'].get():
@@ -303,9 +348,14 @@ def update_distribution_plot(values, gui_objects):
             t_results = calculate_t_test_bootstrap(values)
             if t_results:
                 results_text.append("  T-тест (середнє t-статистики та стд. відхилення):\n")
-                for n, mean_t, std_t, critical_t, conclusion, repetitions in t_results:
-                    results_text.append(f"    Обсяг вибірки {n} (повторень: {repetitions}): Середнє t = {mean_t:.4f}, "
-                                       f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}\n")
+                for result in t_results:
+                    if result[1] is not None:  # Regular result
+                        n, mean_t, std_t, critical_t, conclusion, repetitions, bias, ks_stat, quality = result
+                        results_text.append(f"    Обсяг вибірки {n} : Середнє t = {mean_t:.4f}, "
+                                           f"Стд. відхилення t = {std_t:.4f}, Критичне t = {critical_t:.4f}, {conclusion}, "
+                                           f"Зміщення = {bias:.4f}, KS-статистика = {ks_stat:.4f}, Якість моделювання = {quality}\n")
+                    else:  # Summary result
+                        results_text.append(f"    {result[4]}\n")
 
     # Update plot settings
     if any_distribution_plotted or gui_objects['normal_var'].get() or gui_objects['exponential_var'].get() or \
