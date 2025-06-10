@@ -76,7 +76,6 @@ def update_distribution_plot(values, gui_objects):
         chi2_stat, p_value = chi2_contingency([hist, expected])[0:2]
         return chi2_stat, p_value
 
-    # Helper function for T-test with bootstrap for specific sample sizes
     def calculate_t_test_bootstrap(data, sample_sizes=[20, 50, 100, 400, 1000, 2000, 5000], bootstrap_samples=1000, theta_0=None):
         if theta_0 is None:
             theta_0 = simpledialog.askfloat("T-тест", "Введіть гіпотетичне середнє значення (theta_0):", initialvalue=np.mean(data))
@@ -92,14 +91,16 @@ def update_distribution_plot(values, gui_objects):
                 theta_hat = np.mean(sample)
                 std_err = np.std(sample, ddof=1) / np.sqrt(n)
                 if std_err != 0:
-                    t_stat = (theta_0 - theta_hat) / std_err
+                    t_stat = (theta_hat - theta_0) / std_err  # Змінено порядок (theta_hat - theta_0) для стандартного t-тесту
                     t_stats.append(t_stat)
             if t_stats:
                 mean_t = np.mean(t_stats)
                 std_t = np.std(t_stats, ddof=1)
-                results[n] = (mean_t, std_t)
+                critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                # Висновок про прийняття чи відхилення H0
+                conclusion = "H₀ приймається (середнє відповідає theta_0)" if abs(mean_t) < critical_t else "H₀ відхиляється (середнє не відповідає theta_0)"
+                results[n] = (mean_t, std_t, critical_t, conclusion)
         return results
-
     # Flag to check if any distribution is plotted
     any_distribution_plotted = False
 
@@ -128,13 +129,13 @@ def update_distribution_plot(values, gui_objects):
                            f"{'Нормальний' if chi2_pval > 0.05 else 'Не нормальний'}\n")
 
         # T-test with bootstrap for specific sample sizes
+        # T-test with bootstrap for specific sample sizes
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
             results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-            for n, (mean_t, std_t) in t_results.items():
-                critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+            for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                 results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                  f"Критичне t = {critical_t:.4f}\n")
+                                f"Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Exponential Distribution
     if gui_objects['exponential_var'].get():
@@ -170,13 +171,13 @@ def update_distribution_plot(values, gui_objects):
                                    f"{'Експоненціальний' if chi2_pval > 0.05 else 'Не експоненціальний'}\n")
 
                 # T-test with bootstrap for specific sample sizes
+                # T-test with bootstrap for specific sample sizes
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
                     results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-                    for n, (mean_t, std_t) in t_results.items():
-                        critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                    for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                         results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                          f"Критичне t = {critical_t:.4f}\n")
+                                        f"Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Weibull Distribution
     if gui_objects['weibull_var'].get():
@@ -219,13 +220,13 @@ def update_distribution_plot(values, gui_objects):
                                    f"{'Вейбулла' if chi2_pval > 0.05 else 'Не Вейбулла'}\n")
 
                 # T-test with bootstrap for specific sample sizes
+                # T-test with bootstrap for specific sample sizes
                 t_results = calculate_t_test_bootstrap(values)
                 if t_results:
                     results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-                    for n, (mean_t, std_t) in t_results.items():
-                        critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                    for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                         results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                          f"Критичне t = {critical_t:.4f}\n")
+                                        f"Критичне t = {critical_t:.4f}, {conclusion}\n")
             except Exception as e:
                 messagebox.showerror("Помилка", f"Не вдалося підігнати розподіл Вейбулла: {str(e)}")
                 gui_objects['weibull_var'].set(False)
@@ -261,13 +262,13 @@ def update_distribution_plot(values, gui_objects):
                            f"{'Рівномірний' if chi2_pval > 0.05 else 'Не рівномірний'}\n")
 
         # T-test with bootstrap for specific sample sizes
+        # T-test with bootstrap for specific sample sizes
         t_results = calculate_t_test_bootstrap(values)
         if t_results:
             results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-            for n, (mean_t, std_t) in t_results.items():
-                critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+            for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                 results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                  f"Критичне t = {critical_t:.4f}\n")
+                                f"Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Rayleigh Distribution
     if gui_objects['rayleigh_var'].get():
@@ -297,13 +298,13 @@ def update_distribution_plot(values, gui_objects):
                                f"{'Релея' if chi2_pval > 0.05 else 'Не Релея'}\n")
 
             # T-test with bootstrap for specific sample sizes
+            # T-test with bootstrap for specific sample sizes
             t_results = calculate_t_test_bootstrap(values)
             if t_results:
                 results_text.append("  T-тест (середнє t-статистики та стд. відхилення для різних обсягів вибірки):\n")
-                for n, (mean_t, std_t) in t_results.items():
-                    critical_t = t.ppf(1 - (1 - confidence) / 2, df=n-1)
+                for n, (mean_t, std_t, critical_t, conclusion) in t_results.items():
                     results_text.append(f"    Обсяг вибірки {n}: Середнє t = {mean_t:.4f}, Стд. відхилення t = {std_t:.4f}, "
-                                      f"Критичне t = {critical_t:.4f}\n")
+                                    f"Критичне t = {critical_t:.4f}, {conclusion}\n")
 
     # Update plot settings
     if any_distribution_plotted or gui_objects['normal_var'].get() or gui_objects['exponential_var'].get() or \
