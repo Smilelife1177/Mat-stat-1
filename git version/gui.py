@@ -24,6 +24,23 @@ def create_gui(root):
     canvas = tk.Canvas(tab1)
     scrollbar = tk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas)
+###
+
+    # In gui.py, inside the create_gui function, add to the scrollable_frame section
+    experiment_button = tk.Button(scrollable_frame, text="Провести експеримент t-тесту")
+    experiment_button.pack(fill=tk.X, pady=5)
+
+    # Add a text widget for experiment results
+    experiment_results_frame = ttk.LabelFrame(scrollable_frame, text="Результати експерименту", padding=(5, 5))
+    experiment_results_frame.pack(fill='both', expand=True, pady=10)
+    experiment_results_text = tk.Text(experiment_results_frame, height=15, width=60, wrap=tk.WORD)
+    experiment_results_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    experiment_results_scroll = tk.Scrollbar(experiment_results_frame, command=experiment_results_text.yview)
+    experiment_results_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+    experiment_results_text.config(yscrollcommand=experiment_results_scroll.set)
+
+###
+
 
     canvas.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -220,5 +237,7 @@ def create_gui(root):
             'density_var': density_var,
             'lambda_var': lambda_var,
             'generate_button': generate_button,
+            'experiment_button': experiment_button,
+            'experiment_results_text': experiment_results_text,
             'root': root  # Add root window to gui_objects
         }

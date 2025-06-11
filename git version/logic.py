@@ -24,6 +24,234 @@ def save_data():
             file.write('\n'.join(map(str, values)))
         messagebox.showinfo("Збереження", "Дані успішно збережено")
 
+###
+
+def run_distribution_experiment():
+    """Проведення експерименту для моделювання кількох вибірок та перевірки параметра за t-тестом."""
+    global gui_objects
+    sizes = [20, 50, 100, 400, 1000, 2000, 5000]
+    confidence = gui_objects['confidence_var'].get() / 100
+    alpha = 1 - confidence
+
+    # Prompt for number of experiments
+    num_experiments = simpledialog.askinteger(
+        "Кількість експериментів",
+        "Введіть кількість експериментів для кожного розміру вибірки:",
+        minvalue=1,
+        maxvalue=100,
+        initialvalue=10,
+        parent=gui_objects['root']
+    )
+    if num_experiments is None:
+        return
+
+    # Create a dialog for distribution selection
+    dialog = tk.Toplevel(gui_objects['root'])
+    dialog.title("Вибір розподілу")
+    dialog.geometry("300x250")
+    dialog.transient(gui_objects['root'])
+    dialog.grab_set()
+
+    tk.Label(dialog, text="Оберіть розподіл:").pack(pady=10)
+    selected_distribution = tk.StringVar(value="")
+
+    def set_distribution(dist):
+        selected_distribution.set(dist)
+        dialog.destroy()
+
+    tk.Button(dialog, text="Нормальний", command=lambda: set_distribution("normal")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Експоненціальний", command=lambda: set_distribution("exponential")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Вейбулла", command=lambda: set_distribution("weibull")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Рівномірний", command=lambda: set_distribution("uniform")).pack(fill=tk.X, padx=20, pady=5)
+    tk.Button(dialog, text="Скасувати", command=dialog.destroy).pack(fill=tk.X, padx=20, pady=10)
+
+    dialog.wait_window()
+    distro_type = selected_distribution.get()
+    if not distro_type:
+        return
+
+    t_results = []
+    samples = {}  # Dictionary to store samples
+
+    if distro_type == "normal":
+        mu_true = simpledialog.askfloat(
+            "Параметр нормального розподілу",
+            "Введіть середнє (μ):",
+            initialvalue=0.0,
+            parent=gui_objects['root']
+        )
+        if mu_true is None:
+            return
+        sigma_true = simpledialog.askfloat(
+            "Параметр нормального розподілу",
+            "Введіть стандартне відхилення (σ):",
+            minvalue=0.1,
+            initialvalue=1.0,
+            parent=gui_objects['root']
+        )
+        if sigma_true is None:
+            return
+        for size in sizes:
+            for i in range(num_experiments):
+                sample = np.random.normal(mu_true, sigma_true, size)
+                sample_mean = np.mean(sample)
+                sample_std = np.std(sample, ddof=1)
+                se = sample_std / np.sqrt(size)
+                t_stat, p_value = ttest_1samp(sample, mu_true)
+                critical_value = t.ppf(1 - alpha/2, size - 1)
+                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                t_results.append({
+                    'size': size,
+                    'parameter': 'mu',
+                    'true_value': mu_true,
+                    'estimate': sample_mean,
+                    'std_error': se,
+                    't_statistic': t_stat,
+                    'critical_value': critical_value,
+                    'p_value': p_value,
+                    'conclusion': conclusion
+                })
+                exp_key = f"Розмір: {size} - Експеримент: {i+1}"
+                samples[exp_key] = sample
+
+    elif distro_type == "exponential":
+        lambda_true = simpledialog.askfloat(
+            "Параметр експоненціального розподілу",
+            "Введіть параметр (λ):",
+            minvalue=0.1,
+            initialvalue=0.25,
+            parent=gui_objects['root']
+        )
+        if lambda_true is None:
+            return
+        for size in sizes:
+            for i in range(num_experiments):
+                sample = expon.rvs(scale=1/lambda_true, size=size)
+                sample_mean = np.mean(sample)
+                estimate_lambda = 1 / sample_mean if sample_mean != 0 else 0
+                se = (1 / sample_mean) * np.std(sample, ddof=1) / np.sqrt(size) if sample_mean != 0 else 0
+                t_stat, p_value = ttest_1samp(1 / sample, lambda_true) if sample_mean != 0 else (0, 1)
+                critical_value = t.ppf(1 - alpha/2, size - 1)
+                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                t_results.append({
+                    'size': size,
+                    'parameter': 'lambda',
+                    'true_value': lambda_true,
+                    'estimate': estimate_lambda,
+                    'std_error': se,
+                    't_statistic': t_stat,
+                    'critical_value': critical_value,
+                    'p_value': p_value,
+                    'conclusion': conclusion
+                })
+                exp_key = f"Розмір: {size} - Експеримент: {i+1}"
+                samples[exp_key] = sample
+
+    elif distro_type == "weibull":
+        lambda_true = simpledialog.askfloat(
+            "Параметр Вейбулла",
+            "Введіть параметр масштабу (λ):",
+            minvalue=0.1,
+            initialvalue=2.0,
+            parent=gui_objects['root']
+        )
+        if lambda_true is None:
+            return
+        k_true = simpledialog.askfloat(
+            "Параметр Вейбулла",
+            "Введіть параметр форми (k):",
+            minvalue=0.1,
+            initialvalue=1.5,
+            parent=gui_objects['root']
+        )
+        if k_true is None:
+            return
+        for size in sizes:
+            for i in range(num_experiments):
+                sample = weibull_min.rvs(k_true, scale=lambda_true, size=size)
+                sample_mean = np.mean(sample)
+                estimate_lambda = sample_mean / np.exp(1/k_true)  # Approximation
+                se = np.std(sample, ddof=1) / np.sqrt(size)
+                t_stat, p_value = ttest_1samp(sample, lambda_true * np.exp(1/k_true))
+                critical_value = t.ppf(1 - alpha/2, size - 1)
+                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                t_results.append({
+                    'size': size,
+                    'parameter': 'lambda',
+                    'true_value': lambda_true,
+                    'estimate': estimate_lambda,
+                    'std_error': se,
+                    't_statistic': t_stat,
+                    'critical_value': critical_value,
+                    'p_value': p_value,
+                    'conclusion': conclusion
+                })
+                exp_key = f"Розмір: {size} - Експеримент: {i+1}"
+                samples[exp_key] = sample
+
+    elif distro_type == "uniform":
+        a_true = simpledialog.askfloat(
+            "Параметр рівномірного розподілу",
+            "Введіть нижню межу (a):",
+            initialvalue=0.0,
+            parent=gui_objects['root']
+        )
+        if a_true is None:
+            return
+        b_true = simpledialog.askfloat(
+            "Параметр рівномірного розподілу",
+            "Введіть верхню межу (b):",
+            minvalue=a_true + 0.1,
+            initialvalue=1.0,
+            parent=gui_objects['root']
+        )
+        if b_true is None:
+            return
+        for size in sizes:
+            for i in range(num_experiments):
+                sample = uniform.rvs(loc=a_true, scale=b_true - a_true, size=size)
+                sample_mean = np.mean(sample)
+                estimate_a = 2 * sample_mean - b_true
+                se = np.std(sample, ddof=1) / np.sqrt(size)
+                t_stat, p_value = ttest_1samp(sample, (a_true + b_true) / 2)
+                critical_value = t.ppf(1 - alpha/2, size - 1)
+                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                t_results.append({
+                    'size': size,
+                    'parameter': 'a',
+                    'true_value': a_true,
+                    'estimate': estimate_a,
+                    'std_error': se,
+                    't_statistic': t_stat,
+                    'critical_value': critical_value,
+                    'p_value': p_value,
+                    'conclusion': conclusion
+                })
+                exp_key = f"Розмір: {size} - Експеримент: {i+1}"
+                samples[exp_key] = sample
+
+    # Display results in the experiment_results_text widget
+    gui_objects['experiment_results_text'].delete(1.0, tk.END)
+    gui_objects['experiment_results_text'].insert(tk.END, f"Результати експерименту ({distro_type}):\n\n")
+    for result in t_results:
+        text = (f"Розмір вибірки: {result['size']}\n"
+                f"Параметр: {result['parameter']}\n"
+                f"Справжнє значення: {result['true_value']:.4f}\n"
+                f"Оцінка: {result['estimate']:.4f}\n"
+                f"Стандартна похибка: {result['std_error']:.4f}\n"
+                f"t-статистика: {result['t_statistic']:.4f}\n"
+                f"Критичне значення: {result['critical_value']:.4f}\n"
+                f"p-значення: {result['p_value']:.4f}\n"
+                f"Висновок: {result['conclusion']}\n"
+                f"{'-'*40}\n")
+        gui_objects['experiment_results_text'].insert(tk.END, text)
+
+    messagebox.showinfo("Експеримент завершено", f"Експеримент проведено для {distro_type} розподілу з {num_experiments} експериментами.", parent=gui_objects['root'])
+
+###
+
+
+
 def update_from_data_box(event=None):
     global values, call_types
     try:
@@ -700,6 +928,7 @@ def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
     gui_objects['save_btn'].config(command=save_data)
+    gui_objects['experiment_button'].config(command=run_distribution_experiment)
     gui_objects['data_box'].bind('<FocusOut>', update_from_data_box)
     gui_objects['load_button'].config(command=load_data)
     gui_objects['update_button'].config(command=update_histogram)
