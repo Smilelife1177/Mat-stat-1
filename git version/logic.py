@@ -437,12 +437,14 @@ def load_data():
 
 def generate_samples():
     global values, original_values, call_types, original_call_types
-    sample_sizes = [20, 50, 100, 400, 1000, 2000, 5000]
-    selected_size = simpledialog.askinteger("Обсяг вибірки", "Виберіть обсяг вибірки (20, 50, 100, 400, 1000, 2000, 5000):", 
-                                           minvalue=20, maxvalue=5000, parent=gui_objects['root'])
+    selected_size = simpledialog.askinteger("Обсяг вибірки", "Введіть обсяг вибірки:", 
+                                           minvalue=1, parent=gui_objects['root'])
     
-    if selected_size not in sample_sizes:
-        messagebox.showerror("Помилка", "Обраний обсяг вибірки не відповідає дозволеним значенням", parent=gui_objects['root'])
+    if selected_size is None:
+        return
+    
+    if selected_size <= 0:
+        messagebox.showerror("Помилка", "Обсяг вибірки має бути додатним цілим числом", parent=gui_objects['root'])
         return
     
     # Create a custom dialog for distribution selection
@@ -488,7 +490,9 @@ def generate_samples():
         dist_name = f"Нормальний (μ={mean:.2f}, σ={std:.2f})"
     
     elif distribution == 'exponential':
-        lambda_param = gui_objects['lambda_var'].get()
+        lambda_param = simpledialog.askfloat("Експоненціальний розподіл", "Введіть параметр (λ):", minvalue=0.0, initialvalue=1.0, parent=gui_objects['root'])
+        if lambda_param is None:
+            return
         if lambda_param <= 0:
             messagebox.showerror("Помилка", "Параметр λ має бути додатним", parent=gui_objects['root'])
             return
