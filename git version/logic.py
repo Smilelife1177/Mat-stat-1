@@ -71,57 +71,59 @@ def run_distribution_experiment():
         return
 
     t_results = []
-    samples = {}  # Dictionary to store samples
+    samples = {}
 
     if distro_type == "normal":
-        mu_true = simpledialog.askfloat(
-            "Параметр нормального розподілу",
-            "Введіть середнє (μ):",
-            initialvalue=0.0,
-            parent=gui_objects['root']
-        )
+        mu_true = simpledialog.askfloat("Параметр нормального розподілу", "Введіть середнє (μ):", initialvalue=0.0, parent=gui_objects['root'])
         if mu_true is None:
             return
-        sigma_true = simpledialog.askfloat(
-            "Параметр нормального розподілу",
-            "Введіть стандартне відхилення (σ):",
-            minvalue=0.1,
-            initialvalue=1.0,
-            parent=gui_objects['root']
-        )
+        sigma_true = simpledialog.askfloat("Параметр нормального розподілу", "Введіть стандартне відхилення (σ):", minvalue=0.1, initialvalue=1.0, parent=gui_objects['root'])
         if sigma_true is None:
             return
         for size in sizes:
             for i in range(num_experiments):
                 sample = np.random.normal(mu_true, sigma_true, size)
+                # Тест для mu
                 sample_mean = np.mean(sample)
                 sample_std = np.std(sample, ddof=1)
-                se = sample_std / np.sqrt(size)
-                t_stat, p_value = ttest_1samp(sample, mu_true)
+                se_mean = sample_std / np.sqrt(size)
+                t_stat_mu, p_value_mu = ttest_1samp(sample, mu_true)
                 critical_value = t.ppf(1 - alpha/2, size - 1)
-                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                conclusion_mu = "ВІДХИЛЯТИ H0" if abs(t_stat_mu) > critical_value else "НЕ ВІДХИЛЯТИ H0"
                 t_results.append({
                     'size': size,
                     'parameter': 'mu',
                     'true_value': mu_true,
                     'estimate': sample_mean,
-                    'std_error': se,
-                    't_statistic': t_stat,
+                    'std_error': se_mean,
+                    't_statistic': t_stat_mu,
                     'critical_value': critical_value,
-                    'p_value': p_value,
-                    'conclusion': conclusion
+                    'p_value': p_value_mu,
+                    'conclusion': conclusion_mu
+                })
+                # Тест для sigma
+                sample_var = np.var(sample, ddof=1)
+                estimate_sigma = np.sqrt(sample_var)
+                se_sigma = estimate_sigma / np.sqrt(2 * size)  # Приблизне стандартне відхилення для sigma
+                chi2_stat = (size - 1) * sample_var / (sigma_true ** 2)
+                p_value_sigma = 2 * (1 - chi2.cdf(chi2_stat, size - 1)) if chi2_stat > 0 else 1
+                conclusion_sigma = "ВІДХИЛЯТИ H0" if p_value_sigma < alpha else "НЕ ВІДХИЛЯТИ H0"
+                t_results.append({
+                    'size': size,
+                    'parameter': 'sigma',
+                    'true_value': sigma_true,
+                    'estimate': estimate_sigma,
+                    'std_error': se_sigma,
+                    't_statistic': chi2_stat,
+                    'critical_value': chi2.ppf(1 - alpha/2, size - 1),
+                    'p_value': p_value_sigma,
+                    'conclusion': conclusion_sigma
                 })
                 exp_key = f"Розмір: {size} - Експеримент: {i+1}"
                 samples[exp_key] = sample
 
     elif distro_type == "exponential":
-        lambda_true = simpledialog.askfloat(
-            "Параметр експоненціального розподілу",
-            "Введіть параметр (λ):",
-            minvalue=0.1,
-            initialvalue=0.25,
-            parent=gui_objects['root']
-        )
+        lambda_true = simpledialog.askfloat("Параметр експоненціального розподілу", "Введіть параметр (λ):", minvalue=0.1, initialvalue=0.25, parent=gui_objects['root'])
         if lambda_true is None:
             return
         for size in sizes:
@@ -129,108 +131,118 @@ def run_distribution_experiment():
                 sample = expon.rvs(scale=1/lambda_true, size=size)
                 sample_mean = np.mean(sample)
                 estimate_lambda = 1 / sample_mean if sample_mean != 0 else 0
-                se = (1 / sample_mean) * np.std(sample, ddof=1) / np.sqrt(size) if sample_mean != 0 else 0
-                t_stat, p_value = ttest_1samp(1 / sample, lambda_true) if sample_mean != 0 else (0, 1)
+                se_lambda = estimate_lambda / np.sqrt(size) if sample_mean != 0 else 0
+                t_stat_lambda, p_value_lambda = ttest_1samp(1 / sample, lambda_true) if sample_mean != 0 else (0, 1)
                 critical_value = t.ppf(1 - alpha/2, size - 1)
-                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                conclusion_lambda = "ВІДХИЛЯТИ H0" if abs(t_stat_lambda) > critical_value else "НЕ ВІДХИЛЯТИ H0"
                 t_results.append({
                     'size': size,
                     'parameter': 'lambda',
                     'true_value': lambda_true,
                     'estimate': estimate_lambda,
-                    'std_error': se,
-                    't_statistic': t_stat,
+                    'std_error': se_lambda,
+                    't_statistic': t_stat_lambda,
                     'critical_value': critical_value,
-                    'p_value': p_value,
-                    'conclusion': conclusion
+                    'p_value': p_value_lambda,
+                    'conclusion': conclusion_lambda
                 })
                 exp_key = f"Розмір: {size} - Експеримент: {i+1}"
                 samples[exp_key] = sample
 
     elif distro_type == "weibull":
-        lambda_true = simpledialog.askfloat(
-            "Параметр Вейбулла",
-            "Введіть параметр масштабу (λ):",
-            minvalue=0.1,
-            initialvalue=2.0,
-            parent=gui_objects['root']
-        )
+        lambda_true = simpledialog.askfloat("Параметр Вейбулла", "Введіть параметр масштабу (λ):", minvalue=0.1, initialvalue=2.0, parent=gui_objects['root'])
         if lambda_true is None:
             return
-        k_true = simpledialog.askfloat(
-            "Параметр Вейбулла",
-            "Введіть параметр форми (k):",
-            minvalue=0.1,
-            initialvalue=1.5,
-            parent=gui_objects['root']
-        )
+        k_true = simpledialog.askfloat("Параметр Вейбулла", "Введіть параметр форми (k):", minvalue=0.1, initialvalue=1.5, parent=gui_objects['root'])
         if k_true is None:
             return
         for size in sizes:
             for i in range(num_experiments):
                 sample = weibull_min.rvs(k_true, scale=lambda_true, size=size)
+                # Оцінка параметрів через метод моментів
                 sample_mean = np.mean(sample)
-                estimate_lambda = sample_mean / np.exp(1/k_true)  # Approximation
-                se = np.std(sample, ddof=1) / np.sqrt(size)
-                t_stat, p_value = ttest_1samp(sample, lambda_true * np.exp(1/k_true))
+                sample_var = np.var(sample, ddof=1)
+                estimate_k = (sample_mean / np.sqrt(sample_var)) ** 2  # Приблизне
+                estimate_lambda = sample_mean / np.exp(1/estimate_k)
+                se_lambda = np.std(sample, ddof=1) / np.sqrt(size)
+                t_stat_lambda, p_value_lambda = ttest_1samp(sample, lambda_true * np.exp(1/k_true))
                 critical_value = t.ppf(1 - alpha/2, size - 1)
-                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                conclusion_lambda = "ВІДХИЛЯТИ H0" if abs(t_stat_lambda) > critical_value else "НЕ ВІДХИЛЯТИ H0"
                 t_results.append({
                     'size': size,
                     'parameter': 'lambda',
                     'true_value': lambda_true,
                     'estimate': estimate_lambda,
-                    'std_error': se,
-                    't_statistic': t_stat,
+                    'std_error': se_lambda,
+                    't_statistic': t_stat_lambda,
                     'critical_value': critical_value,
-                    'p_value': p_value,
-                    'conclusion': conclusion
+                    'p_value': p_value_lambda,
+                    'conclusion': conclusion_lambda
+                })
+                # Тест для k
+                se_k = estimate_k / np.sqrt(size)  # Приблизне
+                t_stat_k, p_value_k = ttest_1samp([weibull_min.fit(sample, floc=0)[0]] * size, k_true)
+                conclusion_k = "ВІДХИЛЯТИ H0" if abs(t_stat_k) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                t_results.append({
+                    'size': size,
+                    'parameter': 'k',
+                    'true_value': k_true,
+                    'estimate': estimate_k,
+                    'std_error': se_k,
+                    't_statistic': t_stat_k,
+                    'critical_value': critical_value,
+                    'p_value': p_value_k,
+                    'conclusion': conclusion_k
                 })
                 exp_key = f"Розмір: {size} - Експеримент: {i+1}"
                 samples[exp_key] = sample
 
     elif distro_type == "uniform":
-        a_true = simpledialog.askfloat(
-            "Параметр рівномірного розподілу",
-            "Введіть нижню межу (a):",
-            initialvalue=0.0,
-            parent=gui_objects['root']
-        )
+        a_true = simpledialog.askfloat("Параметр рівномірного розподілу", "Введіть нижню межу (a):", initialvalue=0.0, parent=gui_objects['root'])
         if a_true is None:
             return
-        b_true = simpledialog.askfloat(
-            "Параметр рівномірного розподілу",
-            "Введіть верхню межу (b):",
-            minvalue=a_true + 0.1,
-            initialvalue=1.0,
-            parent=gui_objects['root']
-        )
+        b_true = simpledialog.askfloat("Параметр рівномірного розподілу", "Введіть верхню межу (b):", minvalue=a_true + 0.1, initialvalue=1.0, parent=gui_objects['root'])
         if b_true is None:
             return
         for size in sizes:
             for i in range(num_experiments):
                 sample = uniform.rvs(loc=a_true, scale=b_true - a_true, size=size)
-                sample_mean = np.mean(sample)
-                estimate_a = 2 * sample_mean - b_true
-                se = np.std(sample, ddof=1) / np.sqrt(size)
-                t_stat, p_value = ttest_1samp(sample, (a_true + b_true) / 2)
+                sample_min = np.min(sample)
+                sample_max = np.max(sample)
+                estimate_a = sample_min
+                estimate_b = sample_max
+                se_a = np.std(sample, ddof=1) / np.sqrt(size)
+                se_b = se_a
+                t_stat_a, p_value_a = ttest_1samp(sample, (a_true + b_true) / 2)
                 critical_value = t.ppf(1 - alpha/2, size - 1)
-                conclusion = "ВІДХИЛЯТИ H0" if abs(t_stat) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                conclusion_a = "ВІДХИЛЯТИ H0" if abs(t_stat_a) > critical_value else "НЕ ВІДХИЛЯТИ H0"
                 t_results.append({
                     'size': size,
                     'parameter': 'a',
                     'true_value': a_true,
                     'estimate': estimate_a,
-                    'std_error': se,
-                    't_statistic': t_stat,
+                    'std_error': se_a,
+                    't_statistic': t_stat_a,
                     'critical_value': critical_value,
-                    'p_value': p_value,
-                    'conclusion': conclusion
+                    'p_value': p_value_a,
+                    'conclusion': conclusion_a
+                })
+                t_stat_b, p_value_b = ttest_1samp(sample, (a_true + b_true) / 2)
+                conclusion_b = "ВІДХИЛЯТИ H0" if abs(t_stat_b) > critical_value else "НЕ ВІДХИЛЯТИ H0"
+                t_results.append({
+                    'size': size,
+                    'parameter': 'b',
+                    'true_value': b_true,
+                    'estimate': estimate_b,
+                    'std_error': se_b,
+                    't_statistic': t_stat_b,
+                    'critical_value': critical_value,
+                    'p_value': p_value_b,
+                    'conclusion': conclusion_b
                 })
                 exp_key = f"Розмір: {size} - Експеримент: {i+1}"
                 samples[exp_key] = sample
 
-    # Display results in the experiment_results_text widget
     gui_objects['experiment_results_text'].delete(1.0, tk.END)
     gui_objects['experiment_results_text'].insert(tk.END, f"Результати експерименту ({distro_type}):\n\n")
     for result in t_results:
