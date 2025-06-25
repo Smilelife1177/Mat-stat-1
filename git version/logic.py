@@ -579,24 +579,31 @@ def update_histogram():
     bin_count = gui_objects['bin_count_var'].get()
     if bin_count == 0:
         n = len(values)
-        if n < 100:
+        if n < 53:
             m = int(np.sqrt(n))
-            bin_count = m if m % 2 != 0 else m - 1
+            bin_count = m if m % 2 != 0 else m 
         else:
             m = int(np.cbrt(n))
-            bin_count = m if m % 2 != 0 else m - 1
+            bin_count = m if m % 2 != 0 else m + 1
     
     gui_objects['hist_ax'].clear()
     
-    hist, bins, _ = gui_objects['hist_ax'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True)
-    gui_objects['hist_ax'].set_title('Гістограма часу очікування')
+    hist, bins, _ = gui_objects['hist_ax'].hist(values, bins=bin_count, color='blue', alpha=0.7, edgecolor='black', density=True, label='Гістограма')
+    
+    # Add frequency polygon if checkbox is selected
+    if gui_objects['freq_polygon_var'].get():
+        bin_midpoints = (bins[:-1] + bins[1:]) / 2
+        gui_objects['hist_ax'].plot(bin_midpoints, hist, 'g-', linewidth=2, label='Полігон частот')
+    
+    gui_objects['hist_ax'].set_title('Гістограма часу очікування з полігоном частот')
     
     if gui_objects['density_var'].get():
         mean, std = np.mean(values), np.std(values)
         x = np.linspace(min(values), max(values), 100)
         density = norm.pdf(x, mean, std)
         gui_objects['hist_ax'].plot(x, density, 'r-', label='Щільність')
-        gui_objects['hist_ax'].legend()
+    
+    gui_objects['hist_ax'].legend()
     
     x_min, x_max = np.min(values), np.max(values)
     x_range = x_max - x_min if x_max != x_min else 1

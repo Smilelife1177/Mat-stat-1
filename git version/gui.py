@@ -76,6 +76,11 @@ def create_gui(root):
     density_check = tk.Checkbutton(scrollable_frame, text="Показати функцію щільності", variable=density_var)
     density_check.pack(pady=5)
 
+    # Add frequency polygon checkbox
+    freq_polygon_var = tk.BooleanVar(value=False)
+    freq_polygon_check = tk.Checkbutton(scrollable_frame, text="Показати полігон частот", variable=freq_polygon_var)
+    freq_polygon_check.pack(pady=5)
+
     update_button = tk.Button(scrollable_frame, text="Оновити гістограму")
     update_button.pack(fill=tk.X, pady=5)
 
@@ -237,6 +242,7 @@ def create_gui(root):
             'density_var': density_var,
             'lambda_var': lambda_var,
             'generate_button': generate_button,
+            'freq_polygon_var': freq_polygon_var,
             'experiment_button': experiment_button,
             'experiment_results_text': experiment_results_text,
             'root': root  # Add root window to gui_objects
