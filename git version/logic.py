@@ -319,6 +319,20 @@ def update_characteristics():
     mad_val = median_abs_deviation(values)
     med_val = np.median(values)
     
+    # Додаємо вибіркове середнє (середнє)
+    mean_ci_lower, mean_ci_upper = calculate_confidence_interval(values, "mean", confidence)
+    
+    # Розрахунок групованої моди
+    def calculate_mode_grouped(data):
+        if len(data) == 0:
+            return 0
+        hist, bin_edges = np.histogram(data, bins='auto')
+        max_freq_bin = np.argmax(hist)
+        mode_range = (bin_edges[max_freq_bin], bin_edges[max_freq_bin + 1])
+        return np.mean(mode_range)
+    
+    mode_grouped = calculate_mode_grouped(values)
+    
     mean_ci_lower, mean_ci_upper = calculate_confidence_interval(values, "mean", confidence)
     var_ci_lower, var_ci_upper = calculate_confidence_interval(values, "variance", confidence)
     std_ci_lower, std_ci_upper = calculate_confidence_interval(values, "std", confidence)
@@ -326,15 +340,17 @@ def update_characteristics():
     fmt = f".{precision}f"
     characteristics = [
         ("Середнє", mean, f"[{mean_ci_lower:{fmt}}, {mean_ci_upper:{fmt}}]"),
+        # ("Вибіркове середнє", mean, f"[{mean_ci_lower:{fmt}}, {mean_ci_upper:{fmt}}]"),  # Додано вибіркове середнє
         ("Дисперсія", variance_unbiased, f"[{var_ci_lower:{fmt}}, {var_ci_upper:{fmt}}]"),
-        ("Середньокв. відхилення", std_dev_unbiased, f"[{std_ci_lower:{fmt}}, {std_ci_upper:{fmt}}]"),
+        ("Середньокв. відхилення", std_dev_unbiased, f"[{std_ci_lower:{fmt}}, {std_ci_upper:{fmt}}]"),  # Додано стандартне відхилення
         ("Асиметрія", skewness, "-"),
         ("Ексцес", excess_kurtosis, "-"),
         ("Контрексцес", counter_kurtosis, "-"),
         ("Варіація Пірсона", pearson_var, "-"),
         ("Непарам. коеф. вар.", nonparam_var, "-"),
         ("MAD", mad_val, "-"),
-        ("Медіана", med_val, "-")
+        ("Медіана", med_val, "-"),
+        ("Мода", mode_grouped, "-")  # Додано груповану моду
     ]
     
     for char, value, ci in characteristics:

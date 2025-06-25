@@ -16,7 +16,7 @@ def create_gui(root):
 
     # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
-    notebook.add(tab2, text='Функції розподілу')
+    notebook.add(tab2, text='Емпірична функція розподілу')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab5, text='Гістограма та розподіли')
 
@@ -121,7 +121,7 @@ def create_gui(root):
 
     editing_buttons = [standardize_btn, log_btn, shift_btn, outliers_btn, outliers_skew_btn, reset_btn]
 
-    plot_btn = tk.Button(scrollable_frame, text="Побудувати функції розподілу", state=tk.DISABLED)
+    plot_btn = tk.Button(scrollable_frame, text="Побудувати емпіричну функцію ", state=tk.DISABLED)
     plot_btn.pack(fill=tk.X, pady=5)
 
     cdf_btn = tk.Button(scrollable_frame, text="Побудувати експоненціальний розподіл", state=tk.DISABLED)
