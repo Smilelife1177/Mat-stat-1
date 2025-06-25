@@ -358,7 +358,9 @@ def update_data_box():
     global values
     gui_objects['data_box'].delete(1.0, tk.END)
     formatted_values = ', '.join([f"{val:.4f}" for val in values])
-    gui_objects['data_box'].insert(tk.END, formatted_values)
+    # Створюємо варіаційний ряд
+    variational_series = ', '.join([f"{val:.4f}" for val in np.sort(values)])
+    gui_objects['data_box'].insert(tk.END, f"Дані:\n{formatted_values}\n\nВаріаційний ряд:\n{variational_series}")
     update_histogram()
     update_distribution_plot(values, gui_objects)
 

@@ -142,9 +142,9 @@ def create_gui(root):
     data_frame = ttk.LabelFrame(scrollable_frame, text="Дані", padding=(5, 5))
     data_frame.pack(fill='both', expand=True, pady=10)
 
-    data_box = tk.Text(data_frame, height=10, width=30, wrap=tk.WORD)
-    data_box.pack(fill='both', expand=True)
-    data_scroll = tk.Scrollbar(data_box, command=data_box.yview)
+    data_box = tk.Text(data_frame, height=20, width=80, wrap=tk.WORD)
+    data_box.pack(fill='both', expand=True, padx=5, pady=5)
+    data_scroll = tk.Scrollbar(data_frame, command=data_box.yview)
     data_scroll.pack(side=tk.RIGHT, fill=tk.Y)
     data_box.config(yscrollcommand=data_scroll.set)
 
