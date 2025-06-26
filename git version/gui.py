@@ -47,6 +47,36 @@ def create_gui(root):
     ttest_results_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
 
+    # Create tab for Confidence Intervals
+    tab7 = ttk.Frame(notebook)
+    notebook.add(tab7, text="Довірчі інтервали")
+
+    # Control frame for Confidence Intervals
+    ci_control_frame = ttk.Frame(tab7)
+    ci_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+    # Characteristic selection
+    ttk.Label(ci_control_frame, text="Характеристика:").pack(side=tk.LEFT, padx=5)
+    ci_characteristic_var = tk.StringVar(value="Середнє")
+    ci_characteristic_menu = ttk.OptionMenu(ci_control_frame, ci_characteristic_var, "Середнє", "Середнє", "Дисперсія")
+    ci_characteristic_menu.pack(side=tk.LEFT, padx=5)
+
+    # Confidence level input
+    ttk.Label(ci_control_frame, text="Рівень довіри (%):").pack(side=tk.LEFT, padx=5)
+    ci_confidence_var = tk.DoubleVar(value=95.0)
+    ci_confidence_entry = ttk.Entry(ci_control_frame, textvariable=ci_confidence_var, width=10)
+    ci_confidence_entry.pack(side=tk.LEFT, padx=5)
+
+    # Confidence interval button
+    ci_button = tk.Button(ci_control_frame, text="Побудувати довірчий інтервал")
+    ci_button.pack(side=tk.LEFT, padx=5)
+
+    # Results text area
+    ci_results_text = tk.Text(tab7, height=10, width=50)
+    ci_results_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+
+
     # Вкладка 1: Основний аналіз
     canvas = tk.Canvas(tab1)
     scrollbar = tk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
@@ -107,6 +137,10 @@ def create_gui(root):
 
     generate_button = tk.Button(scrollable_frame, text="Згенерувати вибірки (Розподіли)")
     generate_button.pack(fill=tk.X, pady=5)
+
+    # Button for Confidence Intervals tab
+    # ci_tab_button = tk.Button(dist_frame, text="Побудувати довірчі інтервали")
+    # ci_tab_button.pack(side=tk.TOP, pady=5)
 
     bin_label = tk.Label(scrollable_frame, text="Введіть кількість класів для гістограми:")
     bin_label.pack()
@@ -298,5 +332,10 @@ def create_gui(root):
             'experiment_button': experiment_button,
             'tab2_control_frame': tab2_control_frame,  # Added
             'experiment_results_text': experiment_results_text,
+            # 'ci_tab_button': ci_tab_button,
+            'ci_results_text': ci_results_text,
+            'ci_button': ci_button,
+            'ci_confidence_var': ci_confidence_var,
+            'ci_characteristic_var': ci_characteristic_var,
             'root': root  # Add root window to gui_objects
         }

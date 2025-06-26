@@ -7,6 +7,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from distribution import update_distribution_plot
 from scipy.stats import ttest_1samp, t
+from scipy.stats import chi2
 
 # Глобальні змінні для даних
 values = np.array([])
@@ -834,6 +835,54 @@ def perform_ttest():
     gui_objects['ttest_results_text'].insert(tk.END, result_text)
 
 
+def compute_confidence_interval():
+    global values
+    if len(values) == 0:
+        messagebox.showwarning("Попередження", "Немає даних для побудови довірчого інтервалу")
+        return
+    
+    try:
+        confidence_level = gui_objects['ci_confidence_var'].get()
+        characteristic = gui_objects['ci_characteristic_var'].get()
+    except tk.TclError:
+        messagebox.showerror("Помилка", "Будь ласка, введіть коректне числове значення для рівня довіри")
+        return
+    
+    if not (0 < confidence_level < 100):
+        messagebox.showerror("Помилка", "Рівень довіри повинен бути між 0 і 100")
+        return
+    
+    alpha = 1 - confidence_level / 100
+    n = len(values)
+    df = n - 1
+    mean = np.mean(values)
+    std = np.std(values, ddof=1)
+    
+    result_text = f"Довірчий інтервал для {characteristic.lower()} (рівень довіри {confidence_level}%):\n\n"
+    
+    if characteristic == "Середнє":
+        # Confidence interval for the mean (using t-distribution)
+        t_critical = t.ppf(1 - alpha/2, df)
+        margin_error = t_critical * std / np.sqrt(n)
+        ci_lower = mean - margin_error
+        ci_upper = mean + margin_error
+        result_text += (f"Середнє: {mean:.4f}\n"
+                        f"Інтервал: [{ci_lower:.4f}, {ci_upper:.4f}]\n"
+                        f"Точність (похибка): ±{margin_error:.4f}")
+    elif characteristic == "Дисперсія":
+        # Confidence interval for the variance (using chi-squared distribution)
+        chi2_lower = chi2.ppf(alpha/2, df)
+        chi2_upper = chi2.ppf(1 - alpha/2, df)
+        var = std ** 2
+        ci_lower = (n - 1) * var / chi2_upper
+        ci_upper = (n - 1) * var / chi2_lower
+        result_text += (f"Дисперсія: {var:.4f}\n"
+                        f"Інтервал: [{ci_lower:.4f}, {ci_upper:.4f}]")
+    
+    gui_objects['ci_results_text'].delete(1.0, tk.END)
+    gui_objects['ci_results_text'].insert(tk.END, result_text)
+
+
 
 def log_transform():
     global values, call_types
@@ -1015,6 +1064,8 @@ def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
     gui_objects['save_btn'].config(command=save_data)
+    gui_objects['ci_button'].config(command=compute_confidence_interval)
+    # gui_objects['ci_tab_button'].config(command=compute_confidence_interval)
     gui_objects['ttest_button'].config(command=perform_ttest)
     gui_objects['update_plot_btn'].config(command=plot_distribution_functions)
     gui_objects['experiment_button'].config(command=run_distribution_experiment)
