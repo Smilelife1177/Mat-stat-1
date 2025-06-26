@@ -803,7 +803,7 @@ def perform_ttest():
         messagebox.showwarning("Попередження", "Немає даних для виконання T-тесту")
         return
     
-    mu_0 = 75  # Hypothesized mean
+    mu_0 = gui_objects['mu_0_var'].get()
     alpha = gui_objects['alpha_var'].get()
     
     if not (0 < alpha < 1):
@@ -820,10 +820,10 @@ def perform_ttest():
     critical_value = t.ppf(1 - alpha/2, df)
     
     # Conclusion
-    conclusion = "Відхилити H0: середнє відрізняється від 75" if p_value < alpha else "Не відхиляти H0: середнє не відрізняється від 75"
+    conclusion = f"Відхилити H0: середнє відрізняється від {mu_0}" if p_value < alpha else f"Не відхиляти H0: середнє не відрізняється від {mu_0}"
     
     # Display results
-    result_text = (f"T-тест для H0: μ = 75 проти H1: μ ≠ 75\n\n"
+    result_text = (f"T-тест для H0: μ = {mu_0} проти H1: μ ≠ {mu_0}\n\n"
                    f"Статистика T: {t_statistic:.4f}\n"
                    f"p-значення: {p_value:.4f}\n"
                    f"Ступені свободи: {df}\n"

@@ -22,9 +22,15 @@ def create_gui(root):
     notebook.add(tab5, text='Гістограма та розподіли')
     notebook.add(tab6, text="Тест гіпотези (T-критерій)")
 
-# Control frame for T-test
+    # Control frame for T-test
     ttest_control_frame = ttk.Frame(tab6)
     ttest_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+    # Hypothesized mean input
+    ttk.Label(ttest_control_frame, text="Гіпотетичне середнє (μ0):").pack(side=tk.LEFT, padx=5)
+    mu_0_var = tk.DoubleVar(value=75.0)
+    mu_0_entry = ttk.Entry(ttest_control_frame, textvariable=mu_0_var, width=10)
+    mu_0_entry.pack(side=tk.LEFT, padx=5)
 
     # Significance level input
     ttk.Label(ttest_control_frame, text="Рівень значущості (α):").pack(side=tk.LEFT, padx=5)
@@ -259,6 +265,7 @@ def create_gui(root):
             'alpha_var': alpha_var,
             'ttest_button': ttest_button,
             'ttest_results_text': ttest_results_text,
+            'mu_0_var': mu_0_var,
             'load_button': load_button,
             'update_button': update_button,
             'standardize_btn': standardize_btn,
