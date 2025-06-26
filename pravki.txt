@@ -64,7 +64,7 @@ Lab_3
 
 
 11.06.2025
-t-test for more then 1 paramamet
+#t-test for more then 1 paramamet
 
 
 

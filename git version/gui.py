@@ -24,11 +24,30 @@ def create_gui(root):
     canvas = tk.Canvas(tab1)
     scrollbar = tk.Scrollbar(tab1, orient="vertical", command=canvas.yview)
     scrollable_frame = tk.Frame(canvas)
-###
 
     # In gui.py, inside the create_gui function, add to the scrollable_frame section
     experiment_button = tk.Button(scrollable_frame, text="Провести експеримент t-тесту")
     experiment_button.pack(fill=tk.X, pady=5)
+###
+# Add control frame for tab2 (Емпірична функція розподілу)
+    tab2_control_frame = ttk.Frame(tab2)
+    tab2_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+    show_confidence_var = tk.BooleanVar(value=True)
+    confidence_check = tk.Checkbutton(tab2_control_frame, text="Показати довірчий інтервал", variable=show_confidence_var)
+    confidence_check.pack(side=tk.LEFT, padx=5)
+
+    show_normal_var = tk.BooleanVar(value=True)
+    normal_check = tk.Checkbutton(tab2_control_frame, text="Показати нормальний розподіл", variable=show_normal_var)
+    normal_check.pack(side=tk.LEFT, padx=5)
+
+    show_empirical_var = tk.BooleanVar(value=True)
+    empirical_check = tk.Checkbutton(tab2_control_frame, text="Показати емпіричний розподіл", variable=show_empirical_var)
+    empirical_check.pack(side=tk.LEFT, padx=5)
+
+    update_plot_btn = tk.Button(tab2_control_frame, text="Оновити")
+    update_plot_btn.pack(side=tk.LEFT, padx=5)
+###
 
     # Add a text widget for experiment results
     experiment_results_frame = ttk.LabelFrame(scrollable_frame, text="Результати експерименту", padding=(5, 5))
@@ -38,9 +57,6 @@ def create_gui(root):
     experiment_results_scroll = tk.Scrollbar(experiment_results_frame, command=experiment_results_text.yview)
     experiment_results_scroll.pack(side=tk.RIGHT, fill=tk.Y)
     experiment_results_text.config(yscrollcommand=experiment_results_scroll.set)
-
-###
-
 
     canvas.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -243,7 +259,12 @@ def create_gui(root):
             'lambda_var': lambda_var,
             'generate_button': generate_button,
             'freq_polygon_var': freq_polygon_var,
+            'show_confidence_var': show_confidence_var,  # Added
+            'show_normal_var': show_normal_var,        # Added
+            'show_empirical_var': show_empirical_var,    # Added
+            'update_plot_btn': update_plot_btn,  # Added
             'experiment_button': experiment_button,
+            'tab2_control_frame': tab2_control_frame,  # Added
             'experiment_results_text': experiment_results_text,
             'root': root  # Add root window to gui_objects
         }

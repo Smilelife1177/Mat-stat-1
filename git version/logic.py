@@ -638,8 +638,10 @@ def plot_distribution_functions():
         messagebox.showwarning("Попередження", "Немає даних для побудови функцій розподілу")
         return
     
+    # Clear only the plot area and info frame, preserve the control frame
     for widget in gui_objects['tab2'].winfo_children():
-        widget.destroy()
+        if widget != gui_objects['tab2_control_frame']:
+            widget.destroy()
     
     fig, ax = plt.subplots(figsize=(10, 6))
     
@@ -653,12 +655,6 @@ def plot_distribution_functions():
             m = int(np.cbrt(n))
             n_bins = m if m % 2 != 0 else m - 1
     
-    bin_dt, bin_gr = np.histogram(values, bins=n_bins)
-    Y = np.cumsum(bin_dt) / len(values)
-    Y = np.insert(Y, 0, 0)
-    for i in range(len(Y) - 1):
-        ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
-    
     mean, std = np.mean(values), np.std(values)
     confidence = gui_objects['confidence_var'].get() / 100
     
@@ -669,18 +665,29 @@ def plot_distribution_functions():
     x_upper = x_max + x_margin
     
     x_theor = np.linspace(x_lower, x_upper, 1000)
-    cdf = norm.cdf(x_theor, mean, std)
-    ax.plot(x_theor, cdf, label='Нормальний розподіл', color='red')
     
-    n = len(values)
-    epsilon = np.sqrt(1/(2*n) * np.log(2/(1-confidence)))
-    ax.fill_between(x_theor, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1), 
-                    color='red', alpha=0.2, label='Довірчий інтервал')
+    if gui_objects['show_empirical_var'].get():
+        bin_dt, bin_gr = np.histogram(values, bins=n_bins)
+        Y = np.cumsum(bin_dt) / len(values)
+        Y = np.insert(Y, 0, 0)
+        for i in range(len(Y) - 1):
+            ax.plot([bin_gr[i], bin_gr[i+1]], [Y[i], Y[i]], color='green', linewidth=2, label='Емпіричний розподіл' if i == 0 else "")
+    
+    if gui_objects['show_normal_var'].get():
+        cdf = norm.cdf(x_theor, mean, std)
+        ax.plot(x_theor, cdf, label='Нормальний розподіл', color='red')
+        
+        if gui_objects['show_confidence_var'].get():
+            n = len(values)
+            epsilon = np.sqrt(1/(2*n) * np.log(2/(1-confidence)))
+            ax.fill_between(x_theor, np.maximum(cdf - epsilon, 0), np.minimum(cdf + epsilon, 1), 
+                            color='red', alpha=0.2, label='Довірчий інтервал')
     
     ax.set_title('Порівняння емпіричного та нормального розподілів')
     ax.set_xlabel('Час очікування (хв)')
     ax.set_ylabel('Ймовірність')
-    ax.legend()
+    if gui_objects['show_empirical_var'].get() or gui_objects['show_normal_var'].get():
+        ax.legend()
     ax.grid(True, linestyle='--', alpha=0.7)
     
     ax.set_xlim(x_lower, x_upper)
@@ -969,6 +976,7 @@ def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
     gui_objects['save_btn'].config(command=save_data)
+    gui_objects['update_plot_btn'].config(command=plot_distribution_functions)
     gui_objects['experiment_button'].config(command=run_distribution_experiment)
     gui_objects['data_box'].bind('<FocusOut>', update_from_data_box)
     gui_objects['load_button'].config(command=load_data)
