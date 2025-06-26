@@ -8,17 +8,38 @@ def create_gui(root):
     notebook = ttk.Notebook(root)
     notebook.pack(fill='both', expand=True)
 
-    # Створюємо п'ять вкладок
+    # Створюємо n вкладок
     tab1 = ttk.Frame(notebook)
     tab2 = ttk.Frame(notebook)
     tab3 = ttk.Frame(notebook)
     tab5 = ttk.Frame(notebook)
+    tab6 = ttk.Frame(notebook)
 
     # Додаємо вкладки до notebook
     notebook.add(tab1, text='Основний аналіз')
     notebook.add(tab2, text='Емпірична функція розподілу')
     notebook.add(tab3, text='Експоненціальний розподіл')
     notebook.add(tab5, text='Гістограма та розподіли')
+    notebook.add(tab6, text="Тест гіпотези (T-критерій)")
+
+# Control frame for T-test
+    ttest_control_frame = ttk.Frame(tab6)
+    ttest_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+    # Significance level input
+    ttk.Label(ttest_control_frame, text="Рівень значущості (α):").pack(side=tk.LEFT, padx=5)
+    alpha_var = tk.DoubleVar(value=0.05)
+    alpha_entry = ttk.Entry(ttest_control_frame, textvariable=alpha_var, width=10)
+    alpha_entry.pack(side=tk.LEFT, padx=5)
+
+    # T-test button
+    ttest_button = tk.Button(ttest_control_frame, text="Виконати T-тест")
+    ttest_button.pack(side=tk.LEFT, padx=5)
+
+    # Results text area
+    ttest_results_text = tk.Text(tab6, height=10, width=50)
+    ttest_results_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
 
     # Вкладка 1: Основний аналіз
     canvas = tk.Canvas(tab1)
@@ -234,6 +255,10 @@ def create_gui(root):
             'tab2': tab2,
             'tab3': tab3,
             'tab5': tab5,
+            'tab6': tab6,
+            'alpha_var': alpha_var,
+            'ttest_button': ttest_button,
+            'ttest_results_text': ttest_results_text,
             'load_button': load_button,
             'update_button': update_button,
             'standardize_btn': standardize_btn,

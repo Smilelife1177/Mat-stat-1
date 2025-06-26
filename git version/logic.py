@@ -6,6 +6,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from distribution import update_distribution_plot
+from scipy.stats import ttest_1samp, t
 
 # Глобальні змінні для даних
 values = np.array([])
@@ -796,6 +797,44 @@ def standardize_data():
     update_data_box()
     messagebox.showinfo("Стандартизація", "Дані успішно стандартизовано")
 
+def perform_ttest():
+    global values
+    if len(values) == 0:
+        messagebox.showwarning("Попередження", "Немає даних для виконання T-тесту")
+        return
+    
+    mu_0 = 75  # Hypothesized mean
+    alpha = gui_objects['alpha_var'].get()
+    
+    if not (0 < alpha < 1):
+        messagebox.showerror("Помилка", "Рівень значущості (α) повинен бути між 0 і 1")
+        return
+    
+    # Perform one-sample t-test
+    t_statistic, p_value = ttest_1samp(values, popmean=mu_0)
+    
+    # Degrees of freedom
+    df = len(values) - 1
+    
+    # Critical value for two-tailed test
+    critical_value = t.ppf(1 - alpha/2, df)
+    
+    # Conclusion
+    conclusion = "Відхилити H0: середнє відрізняється від 75" if p_value < alpha else "Не відхиляти H0: середнє не відрізняється від 75"
+    
+    # Display results
+    result_text = (f"T-тест для H0: μ = 75 проти H1: μ ≠ 75\n\n"
+                   f"Статистика T: {t_statistic:.4f}\n"
+                   f"p-значення: {p_value:.4f}\n"
+                   f"Ступені свободи: {df}\n"
+                   f"Критичне значення (α={alpha}): ±{critical_value:.4f}\n"
+                   f"Висновок: {conclusion}")
+    
+    gui_objects['ttest_results_text'].delete(1.0, tk.END)
+    gui_objects['ttest_results_text'].insert(tk.END, result_text)
+
+
+
 def log_transform():
     global values, call_types
     if len(values) == 0:
@@ -976,6 +1015,7 @@ def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
     gui_objects['save_btn'].config(command=save_data)
+    gui_objects['ttest_button'].config(command=perform_ttest)
     gui_objects['update_plot_btn'].config(command=plot_distribution_functions)
     gui_objects['experiment_button'].config(command=run_distribution_experiment)
     gui_objects['data_box'].bind('<FocusOut>', update_from_data_box)
