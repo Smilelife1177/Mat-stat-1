@@ -87,6 +87,27 @@ def create_gui(root):
     lab1_canvas = FigureCanvasTkAgg(fig_lab1, master=tab_lab1)
     lab1_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+#
+    # Додаємо табличку для статистичних даних
+    lab1_table_frame = ttk.LabelFrame(tab_lab1, text="Статистичний ряд", padding=(5, 5))
+    lab1_table_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+    lab1_table = ttk.Treeview(lab1_table_frame, columns=("N", "IntervalLimits", "MidInterval", "Frequency", "RelativeFreq", "CumulativeRelFreq"), show="headings", height=10)
+    lab1_table.heading("N", text="N")
+    lab1_table.heading("IntervalLimits", text="Межі інтервалу")
+    lab1_table.heading("MidInterval", text="Середній інтервал")
+    lab1_table.heading("Frequency", text="Частота")
+    lab1_table.heading("RelativeFreq", text="Відносна частота")
+    lab1_table.heading("CumulativeRelFreq", text="Накопичена відносна частота")
+    lab1_table.column("N", width=30, anchor="center")
+    lab1_table.column("IntervalLimits", width=150)
+    lab1_table.column("MidInterval", width=100)
+    lab1_table.column("Frequency", width=80, anchor="center")
+    lab1_table.column("RelativeFreq", width=100, anchor="center")
+    lab1_table.column("CumulativeRelFreq", width=150, anchor="center")
+    lab1_table.pack(fill=tk.BOTH, expand=True)
+#
+
     # Control frame for Confidence Intervals
     ci_control_frame = ttk.Frame(tab7)
     ci_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
@@ -379,5 +400,6 @@ def create_gui(root):
             'lab1_fig': fig_lab1,
             'lab1_ax': ax_lab1,
             'lab1_canvas': lab1_canvas,
+            'lab1_table': lab1_table,
             'root': root  # Add root window to gui_objects
         }

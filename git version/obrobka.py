@@ -2,11 +2,11 @@ import numpy as np
 from tkinter import messagebox
 import matplotlib.pyplot as plt
 
-def generate_and_build_series(mean, std, results_text, ax, canvas):
+def generate_and_build_series(mean, std, results_text, ax, canvas, table):
     """
     Генерує 100 нормально розподілених чисел, будує інтервальний статистичний ряд (10 інтервалів),
     гістограму, полігон частот, огіву та емпіричну функцію розподілу (ECDF).
-    Виводить результати в текстовий блок і відображає графіки.
+    Виводить результати в текстовий блок, таблицю та відображає графіки.
     """
     try:
         # Перевірка параметрів
@@ -36,6 +36,22 @@ def generate_and_build_series(mean, std, results_text, ax, canvas):
             results_text.insert('end', f"{interval:<20} {freq:<10}\n")
         results_text.insert('end', "\nСумарна частота: " + str(sum(hist)) + "\n")
         
+        # Очищення таблиці
+        for item in table.get_children():
+            table.delete(item)
+        
+        # Заповнення таблиці з відладковим виводом
+        total_freq = sum(hist)
+        cumulative_rel_freq = 0
+        for i in range(len(hist)):
+            interval = f"[{bin_edges[i]:.4f}, {bin_edges[i+1]:.4f})"
+            mid_interval = (bin_edges[i] + bin_edges[i+1]) / 2
+            freq = hist[i]
+            rel_freq = freq / total_freq
+            cumulative_rel_freq += rel_freq
+            table.insert("", "end", values=(i+1, interval, f"{mid_interval:.4f}", freq, f"{rel_freq:.4f}", f"{cumulative_rel_freq:.4f}"))
+            print(f"Row {i+1}: {interval}, {mid_interval:.4f}, {freq}, {rel_freq:.4f}, {cumulative_rel_freq:.4f}")  # Відладковий вивід
+        
         # Очищення попереднього графіку
         ax.clear()
         
@@ -62,7 +78,7 @@ def generate_and_build_series(mean, std, results_text, ax, canvas):
         ax.legend()
         ax.grid(True, linestyle='--', alpha=0.7)
         
-        # Встановлення меж осей для кращої візуалізації (аналогічно до зображення)
+        # Встановлення меж осей для кращої візуалізації
         ax.set_ylim(0, max(cumulative_hist) * 1.1)
         ax.set_xlim(min(data) - 10, max(data) + 10)
         
