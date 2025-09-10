@@ -70,3 +70,13 @@ Lab_3
 
 25.06.2025
 expo rozpodil create not good have some spaces
+
+
+
+26.06.2025
+!
+minitab like example
+in top menu i can click on any option
+it generated in center
+left will be generated options that i can move on it  
+!
