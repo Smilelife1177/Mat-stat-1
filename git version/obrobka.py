@@ -46,21 +46,25 @@ def generate_and_build_series(mean, std, results_text, ax, canvas):
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
         ax.plot(bin_centers, hist, 'r-', marker='o', label='Полігон частот')
         
-        # Побудова огіви (кумулятивної гістограми)
+        # Побудова огіви (кумулятивної гістограми з сходинками)
         cumulative_hist = np.cumsum(hist)
-        ax.step(bin_edges[1:], cumulative_hist, 'g-', where='post', label='Огіва (кумулятивна гістограма)')
+        ax.step(bin_edges[1:], cumulative_hist, where='post', color='green', label='Огіва (кумулятивна частота)')
         
-        # Побудова емпіричної функції розподілу (ECDF)
+        # Побудова емпіричної функції розподілу (ECDF) з сходинками
         sorted_data = np.sort(data)
-        ecdf_y = np.arange(1, len(data) + 1) / len(data)
-        ax.step(sorted_data, ecdf_y, 'm-', where='post', label='Емпірична функція розподілу')
+        ecdf_y = np.arange(1, len(data) + 1)
+        ax.step(sorted_data, ecdf_y, where='post', color='magenta', label='Емпірична функція розподілу')
         
         # Налаштування графіку
         ax.set_title('Гістограма, Полігон частот, Огіва та ECDF')
-        ax.set_xlabel('Значення')
-        ax.set_ylabel('Частота / Кумулятивна частота / Ймовірність')
+        ax.set_xlabel('K (Значення)')
+        ax.set_ylabel('C, г/м³ (Частота / Кумулятивна частота)')
         ax.legend()
         ax.grid(True, linestyle='--', alpha=0.7)
+        
+        # Встановлення меж осей для кращої візуалізації (аналогічно до зображення)
+        ax.set_ylim(0, max(cumulative_hist) * 1.1)
+        ax.set_xlim(min(data) - 10, max(data) + 10)
         
         # Оновлення canvas
         canvas.draw()
