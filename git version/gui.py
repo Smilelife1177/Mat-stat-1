@@ -83,11 +83,10 @@ def create_gui(root):
     lab1_results_text.config(yscrollcommand=lab1_results_scroll.set)
 
     # Додаємо matplotlib canvas для графіків
-    fig_lab1, ax_lab1 = plt.subplots(figsize=(8, 6))
+    fig_lab1, ax_lab1 = plt.subplots(figsize=(6, 4))
     lab1_canvas = FigureCanvasTkAgg(fig_lab1, master=tab_lab1)
-    lab1_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+    lab1_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False, padx=10, pady=5)
 
-#
     # Додаємо табличку для статистичних даних
     lab1_table_frame = ttk.LabelFrame(tab_lab1, text="Статистичний ряд", padding=(5, 5))
     lab1_table_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
