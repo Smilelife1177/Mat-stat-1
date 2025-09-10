@@ -51,6 +51,37 @@ def create_gui(root):
     tab7 = ttk.Frame(notebook)
     notebook.add(tab7, text="Довірчі інтервали")
 
+    # Нова вкладка для Лабораторної роботи 1: Обробка вибірки
+    tab_lab1 = ttk.Frame(notebook)
+    notebook.add(tab_lab1, text="Лаб. 1: Обробка вибірки")
+
+    # Control frame для лаби
+    lab1_control_frame = ttk.Frame(tab_lab1)
+    lab1_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+    # Поле для mean (середнє)
+    ttk.Label(lab1_control_frame, text="Середнє (μ):").pack(side=tk.LEFT, padx=5)
+    lab1_mean_var = tk.DoubleVar(value=0.0)
+    lab1_mean_entry = ttk.Entry(lab1_control_frame, textvariable=lab1_mean_var, width=10)
+    lab1_mean_entry.pack(side=tk.LEFT, padx=5)
+
+    # Поле для std (стандартне відхилення)
+    ttk.Label(lab1_control_frame, text="Стд. відхилення (σ):").pack(side=tk.LEFT, padx=5)
+    lab1_std_var = tk.DoubleVar(value=1.0)
+    lab1_std_entry = ttk.Entry(lab1_control_frame, textvariable=lab1_std_var, width=10)
+    lab1_std_entry.pack(side=tk.LEFT, padx=5)
+
+    # Кнопка для генерації та побудови ряду
+    lab1_generate_btn = tk.Button(lab1_control_frame, text="Генерувати та побудувати ряд")
+    lab1_generate_btn.pack(side=tk.LEFT, padx=5)
+
+    # Текстовий блок для результатів (даних та інтервального ряду)
+    lab1_results_text = tk.Text(tab_lab1, height=20, width=80, wrap=tk.WORD)
+    lab1_results_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+    lab1_results_scroll = tk.Scrollbar(tab_lab1, command=lab1_results_text.yview)
+    lab1_results_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+    lab1_results_text.config(yscrollcommand=lab1_results_scroll.set)
+
     # Control frame for Confidence Intervals
     ci_control_frame = ttk.Frame(tab7)
     ci_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
@@ -332,10 +363,13 @@ def create_gui(root):
             'experiment_button': experiment_button,
             'tab2_control_frame': tab2_control_frame,  # Added
             'experiment_results_text': experiment_results_text,
-            # 'ci_tab_button': ci_tab_button,
             'ci_results_text': ci_results_text,
             'ci_button': ci_button,
             'ci_confidence_var': ci_confidence_var,
             'ci_characteristic_var': ci_characteristic_var,
+            'lab1_mean_var': lab1_mean_var,
+            'lab1_std_var': lab1_std_var,
+            'lab1_generate_btn': lab1_generate_btn,
+            'lab1_results_text': lab1_results_text,
             'root': root  # Add root window to gui_objects
         }

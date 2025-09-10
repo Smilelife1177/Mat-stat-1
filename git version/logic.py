@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from distribution import update_distribution_plot
 from scipy.stats import ttest_1samp, t
 from scipy.stats import chi2
+from obrobka import generate_and_build_series  # Імпорт нової функції
 
 # Глобальні змінні для даних
 values = np.array([])
@@ -1064,8 +1065,12 @@ def initialize_logic(objects):
     global gui_objects
     gui_objects = objects
     gui_objects['save_btn'].config(command=save_data)
+    gui_objects['lab1_generate_btn'].config(command=lambda: generate_and_build_series(
+    gui_objects['lab1_mean_var'].get(),
+    gui_objects['lab1_std_var'].get(),
+    gui_objects['lab1_results_text']
+))
     gui_objects['ci_button'].config(command=compute_confidence_interval)
-    # gui_objects['ci_tab_button'].config(command=compute_confidence_interval)
     gui_objects['ttest_button'].config(command=perform_ttest)
     gui_objects['update_plot_btn'].config(command=plot_distribution_functions)
     gui_objects['experiment_button'].config(command=run_distribution_experiment)
