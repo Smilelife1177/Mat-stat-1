@@ -1068,7 +1068,9 @@ def initialize_logic(objects):
     gui_objects['lab1_generate_btn'].config(command=lambda: generate_and_build_series(
     gui_objects['lab1_mean_var'].get(),
     gui_objects['lab1_std_var'].get(),
-    gui_objects['lab1_results_text']
+    gui_objects['lab1_results_text'],
+    gui_objects['lab1_ax'],
+    gui_objects['lab1_canvas']
 ))
     gui_objects['ci_button'].config(command=compute_confidence_interval)
     gui_objects['ttest_button'].config(command=perform_ttest)

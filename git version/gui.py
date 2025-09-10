@@ -82,6 +82,11 @@ def create_gui(root):
     lab1_results_scroll.pack(side=tk.RIGHT, fill=tk.Y)
     lab1_results_text.config(yscrollcommand=lab1_results_scroll.set)
 
+    # Додаємо matplotlib canvas для графіків
+    fig_lab1, ax_lab1 = plt.subplots(figsize=(8, 6))
+    lab1_canvas = FigureCanvasTkAgg(fig_lab1, master=tab_lab1)
+    lab1_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
     # Control frame for Confidence Intervals
     ci_control_frame = ttk.Frame(tab7)
     ci_control_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
@@ -371,5 +376,8 @@ def create_gui(root):
             'lab1_std_var': lab1_std_var,
             'lab1_generate_btn': lab1_generate_btn,
             'lab1_results_text': lab1_results_text,
+            'lab1_fig': fig_lab1,
+            'lab1_ax': ax_lab1,
+            'lab1_canvas': lab1_canvas,
             'root': root  # Add root window to gui_objects
         }
