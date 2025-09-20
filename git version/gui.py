@@ -333,8 +333,41 @@ def create_gui(root):
     dist_info_scroll = tk.Scrollbar(info_frame_tab5, command=dist_info_text.yview)
     dist_info_scroll.pack(side=tk.RIGHT, fill=tk.Y)
     dist_info_text.config(yscrollcommand=dist_info_scroll.set)
+#
 
+    # Список вкладок для зручності (фрейм, ім'я)
+    tabs = [
+        (tab1, 'Основний аналіз'),
+        (tab2, 'Емпірична функція розподілу'),
+        (tab3, 'Експоненціальний розподіл'),
+        (tab5, 'Гістограма та розподіли'),
+        (tab6, "Тест гіпотези (T-критерій)"),
+        (tab7, "Довірчі інтервали"),
+        (tab_lab1, "Лаб. 1: Обробка вибірки")
+    ]
 
+    # Приховуємо всі вкладки спочатку
+    for tab, name in tabs:
+        notebook.tab(tab, state='hidden')
+
+    # Функція для показу однієї вкладки (приховує інші)
+    def show_tab(selected_tab):
+        for tab, name in tabs:
+            notebook.tab(tab, state='hidden')
+        notebook.tab(selected_tab, state='normal')
+        notebook.select(selected_tab)
+
+    # Створюємо меню зверху
+    menubar = tk.Menu(root)
+    root.config(menu=menubar)
+    tab_menu = tk.Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="Вкладки", menu=tab_menu)
+
+    # Додаємо пункти меню для кожної вкладки
+    for tab, name in tabs:
+        tab_menu.add_command(label=name, command=lambda t=tab: show_tab(t))
+
+#
 
     return {
             'dist_info_text': dist_info_text,
