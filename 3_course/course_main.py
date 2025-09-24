@@ -10,7 +10,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Лабораторні роботи з математичної статистики")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, 1200, 1000)
 
         # Центральний віджет - вкладки
         self.tab_widget = QTabWidget()
