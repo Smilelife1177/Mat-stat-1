@@ -1,24 +1,26 @@
-# 3_course_main.py
-import tkinter as tk
-from tkinter import ttk
+# course3_main.py
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget
+import course01 as lab1
 
-# Імпорт модулів для лабораторних (зауваження: назви файлів, що починаються з цифри, не дозволяють прямий імпорт.
-# Рекомендую перейменувати файли на course3_01.py тощо, або використовувати sys.path для імпорту.
-# Для прикладу, припустимо файл називається course3_01.py і імпортується як import course3_01
-import course01 as lab1  # Замініть на актуальний імпорт після перейменування
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
-root = tk.Tk()
-root.title("Лабораторні роботи з математичної статистики")
-root.geometry("800x600")
+    def initUI(self):
+        self.setWindowTitle("Лабораторні роботи з математичної статистики")
+        self.setGeometry(100, 100, 1200, 800)
 
-notebook = ttk.Notebook(root)
-notebook.pack(fill='both', expand=True)
+        # Центральний віджет - вкладки
+        self.tab_widget = QTabWidget()
+        self.setCentralWidget(self.tab_widget)
 
-# Додавання вкладки для Lab 1
-lab1.create_tab(notebook)
+        # Додавання лабораторних робіт
+        lab1.create_tab(self.tab_widget)
 
-# Тут можна додавати інші лаби в майбутньому, наприклад:
-# import course3_02 as lab2
-# lab2.create_tab(notebook)
-
-root.mainloop()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
