@@ -12,15 +12,15 @@ class Lab1Widget(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.generate_plots()  # Початкова генерація
+        self.generate_plots()  # Initial plot generation
 
     def initUI(self):
         layout = QVBoxLayout()
 
-        # Фрейм для введення параметрів
+        # Input frame
         input_layout = QHBoxLayout()
         
-        # Параметри
+        # Parameters
         self.n_edit = QLineEdit("100")
         self.mean_edit = QLineEdit("0")
         self.std_edit = QLineEdit("1")
@@ -38,51 +38,64 @@ class Lab1Widget(QWidget):
         
         layout.addLayout(input_layout)
 
-        # Фрейм для чекбоксів
+        # Checkbox frame
         checkbox_layout = QHBoxLayout()
-        self.hist_checkbox = QCheckBox("Гістограма")
+        self.hist_checkbox = QCheckBox("Гістограма (інтервальний статистичний ряд )")
         self.hist_checkbox.setChecked(True)  # Set "Гістограма" as checked by default
         self.polygon_checkbox = QCheckBox("Полігон частот")
-        self.polygon_checkbox.setChecked(False)
         self.ogive_checkbox = QCheckBox("Огіва")
-        self.ogive_checkbox.setChecked(False)
         self.cumulative_checkbox = QCheckBox("Кумулята")
-        self.cumulative_checkbox.setChecked(False)
         self.ecdf_checkbox = QCheckBox("Емпірична функція розподілу")
-        self.ecdf_checkbox.setChecked(False)
 
-        checkbox_layout.addWidget(self.hist_checkbox)
-        checkbox_layout.addWidget(self.polygon_checkbox)
-        checkbox_layout.addWidget(self.ogive_checkbox)
-        checkbox_layout.addWidget(self.cumulative_checkbox)
-        checkbox_layout.addWidget(self.ecdf_checkbox)
+        # Store checkboxes in a list for easier management
+        self.checkboxes = [
+            self.hist_checkbox,
+            self.polygon_checkbox,
+            self.ogive_checkbox,
+            self.cumulative_checkbox,
+            self.ecdf_checkbox
+        ]
+
+        # Connect checkbox state changes to handler
+        for checkbox in self.checkboxes:
+            checkbox.stateChanged.connect(self.handle_checkbox_change)
+            checkbox_layout.addWidget(checkbox)
+        
         layout.addLayout(checkbox_layout)
 
-        # Матplotlib canvas
+        # Matplotlib canvas
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
 
-        # Таблиця
+        # Table
         self.table = QTableWidget()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels(["N", "Межі інтервалу", "Середній інтервал", 
                                             "Частота", "Відноша частота", "Накопичена відноша частота"])
-        # Stretch the table to fill available space
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setSizeAdjustPolicy(QTableWidget.AdjustToContents)
-        layout.addWidget(self.table, stretch=1)  # Add stretch factor to make table expandable
+        layout.addWidget(self.table, stretch=1)
 
-        # Результати
+        # Results
         self.result_label = QLabel("")
         self.result_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.result_label)
 
         self.setLayout(layout)
 
+    def handle_checkbox_change(self):
+        # Ensure only one checkbox is checked
+        sender = self.sender()
+        if sender.isChecked():
+            for checkbox in self.checkboxes:
+                if checkbox != sender:
+                    checkbox.setChecked(False)
+            self.generate_plots()
+
     def generate_plots(self):
         try:
-            # Отримання параметрів
+            # Get parameters
             n = int(self.n_edit.text())
             mean = float(self.mean_edit.text())
             std = float(self.std_edit.text())
@@ -91,20 +104,20 @@ class Lab1Widget(QWidget):
                 self.result_label.setText("Помилка: n і std повинні бути додатними!")
                 return
 
-            # Генерування даних
+            # Generate data
             data = np.random.normal(loc=mean, scale=std, size=n)
             data_sorted = np.sort(data)
 
-            # Інтервальний ряд (10 інтервалів)
+            # Interval series (10 bins)
             num_bins = 10
             hist, bin_edges = np.histogram(data, bins=num_bins)
             midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-            # Оцінки
+            # Estimations
             mean_est = np.sum(midpoints * hist) / len(data)
             var_est = np.sum(hist * (midpoints - mean_est)**2) / (len(data) - 1)
 
-            # Заповнення таблиці
+            # Fill table
             self.table.setRowCount(num_bins)
             for i in range(num_bins):
                 self.table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
@@ -116,17 +129,17 @@ class Lab1Widget(QWidget):
                 cum_rel_freq = np.sum(hist[:i+1]) / n
                 self.table.setItem(i, 5, QTableWidgetItem(f"{cum_rel_freq:.4f}"))
 
-            # Очищення фігури
+            # Clear figure
             self.figure.clear()
 
-            # Налаштування розміру фігури
+            # Set figure size
             self.figure.set_size_inches(12, 6)
 
-            # Створення одного subplot'а
+            # Create single subplot
             ax = self.figure.add_subplot(111)
             self.figure.suptitle('Графік для лабораторної роботи 1')
 
-            # Визначення активного графіка
+            # Determine active plot
             if self.hist_checkbox.isChecked():
                 ax.hist(data, bins=num_bins, edgecolor='black', color='blue')
                 ax.set_title('Гістограма')
@@ -149,11 +162,11 @@ class Lab1Widget(QWidget):
                 ax.text(0.5, 0.5, 'Оберіть хоча б один графік', ha='center', va='center')
                 ax.set_title('Немає активних графіків')
 
-            # Оновлення canvas
+            # Update canvas
             self.figure.tight_layout()
             self.canvas.draw()
 
-            # Відображення результатів
+            # Display results
             results_text = f"Оцінка математичного сподівання: {mean_est:.4f}\nОцінка дисперсії: {var_est:.4f}"
             self.result_label.setText(results_text)
 
