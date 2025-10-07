@@ -24,15 +24,17 @@ class Lab1Widget(QWidget):
         self.n_edit = QLineEdit("100")
         self.mean_edit = QLineEdit("0")
         self.std_edit = QLineEdit("1")
+        self.bins_edit = QLineEdit("10")  # New input for number of bins
         
-        labels = ["Кількість чисел (n):", "Математичне сподівання:", "Стандартне відхилення:"]
-        edits = [self.n_edit, self.mean_edit, self.std_edit]
+        labels = ["Кількість чисел (n):", "Математичне сподівання:", 
+                  "Стандартне відхилення:", "Кількість інтервалів:"]
+        edits = [self.n_edit, self.mean_edit, self.std_edit, self.bins_edit]
         
         for label, edit in zip(labels, edits):
             input_layout.addWidget(QLabel(label))
             input_layout.addWidget(edit)
         
-        generate_btn = QPushButton("Згенерувати")
+        generate_btn = QPushButton("Згенерувати нормальний розподіл")
         generate_btn.clicked.connect(self.generate_plots)
         input_layout.addWidget(generate_btn)
         
@@ -99,17 +101,17 @@ class Lab1Widget(QWidget):
             n = int(self.n_edit.text())
             mean = float(self.mean_edit.text())
             std = float(self.std_edit.text())
+            num_bins = int(self.bins_edit.text())  # Get number of bins
 
-            if n <= 0 or std <= 0:
-                self.result_label.setText("Помилка: n і std повинні бути додатними!")
+            if n <= 0 or std <= 0 or num_bins <= 0:
+                self.result_label.setText("Помилка: n, std і кількість інтервалів повинні бути додатними!")
                 return
 
             # Generate data
             data = np.random.normal(loc=mean, scale=std, size=n)
             data_sorted = np.sort(data)
 
-            # Interval series (10 bins)
-            num_bins = 10
+            # Interval series
             hist, bin_edges = np.histogram(data, bins=num_bins)
             midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
 
