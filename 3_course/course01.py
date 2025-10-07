@@ -24,7 +24,7 @@ class Lab1Widget(QWidget):
         self.n_edit = QLineEdit("100")
         self.mean_edit = QLineEdit("0")
         self.std_edit = QLineEdit("1")
-        self.bins_edit = QLineEdit("10")  # New input for number of bins
+        self.bins_edit = QLineEdit("10")  # Input for number of bins
         
         labels = ["Кількість чисел (n):", "Математичне сподівання:", 
                   "Стандартне відхилення:", "Кількість інтервалів:"]
@@ -42,7 +42,7 @@ class Lab1Widget(QWidget):
 
         # Checkbox frame
         checkbox_layout = QHBoxLayout()
-        self.hist_checkbox = QCheckBox("Гістограма (інтервальний статистичний ряд )")
+        self.hist_checkbox = QCheckBox("Гістограма")
         self.hist_checkbox.setChecked(True)  # Set "Гістограма" as checked by default
         self.polygon_checkbox = QCheckBox("Полігон частот")
         self.ogive_checkbox = QCheckBox("Огіва")
@@ -111,15 +111,17 @@ class Lab1Widget(QWidget):
             data = np.random.normal(loc=mean, scale=std, size=n)
             data_sorted = np.sort(data)
 
-            # Interval series
+            # Create interval series
             hist, bin_edges = np.histogram(data, bins=num_bins)
             midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-            # Estimations
+            # Calculate estimates based on interval series
+            # Mathematical expectation: sum(midpoint * frequency) / n
             mean_est = np.sum(midpoints * hist) / len(data)
+            # Variance: sum(frequency * (midpoint - mean_est)^2) / (n - 1)
             var_est = np.sum(hist * (midpoints - mean_est)**2) / (len(data) - 1)
 
-            # Fill table
+            # Fill table with interval series data
             self.table.setRowCount(num_bins)
             for i in range(num_bins):
                 self.table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
@@ -144,7 +146,7 @@ class Lab1Widget(QWidget):
             # Determine active plot
             if self.hist_checkbox.isChecked():
                 ax.hist(data, bins=num_bins, edgecolor='black', color='blue')
-                ax.set_title('Гістограма')
+                ax.set_title('Гістограма (інтервальний статистичний ряд)')
             elif self.polygon_checkbox.isChecked():
                 ax.plot(midpoints, hist, 'o-', color='green')
                 ax.set_title('Полігон частот')
@@ -168,8 +170,9 @@ class Lab1Widget(QWidget):
             self.figure.tight_layout()
             self.canvas.draw()
 
-            # Display results
-            results_text = f"Оцінка математичного сподівання: {mean_est:.4f}\nОцінка дисперсії: {var_est:.4f}"
+            # Display results with explicit mention of interval series
+            results_text = (f"Оцінка математичного сподівання (на основі інтервального ряду): {mean_est:.4f}\n"
+                           f"Оцінка дисперсії (на основі інтервального ряду): {var_est:.4f}")
             self.result_label.setText(results_text)
 
         except ValueError:
