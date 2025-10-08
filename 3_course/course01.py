@@ -1,4 +1,4 @@
-# course3_01.py
+# course01.py
 import numpy as np
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
@@ -48,6 +48,7 @@ class Lab1Widget(QWidget):
         self.ogive_checkbox = QCheckBox("Огіва")
         self.cumulative_checkbox = QCheckBox("Кумулята")
         self.ecdf_checkbox = QCheckBox("Емпірична функція розподілу")
+        self.ecdf_bins_checkbox = QCheckBox("Емпірична функція (інтервальний ряд)")  # New checkbox
 
         # Store checkboxes in a list for easier management
         self.checkboxes = [
@@ -55,7 +56,8 @@ class Lab1Widget(QWidget):
             self.polygon_checkbox,
             self.ogive_checkbox,
             self.cumulative_checkbox,
-            self.ecdf_checkbox
+            self.ecdf_checkbox,
+            self.ecdf_bins_checkbox
         ]
 
         # Connect checkbox state changes to handler
@@ -151,9 +153,10 @@ class Lab1Widget(QWidget):
                 ax.plot(midpoints, hist, 'o-', color='green')
                 ax.set_title('Полігон частот')
             elif self.ogive_checkbox.isChecked():
-                cum_freq = np.cumsum(hist)
-                ax.plot(midpoints, cum_freq, 'o-', color='blue')
-                ax.set_title('Огіва (кумулятивна частота)')
+                rel_cum_freq = np.cumsum(hist) / len(data)
+                ax.hist(bin_edges[:-1], bins=bin_edges, weights=rel_cum_freq, edgecolor='black', color='blue')
+                ax.set_title('Огіва (накопичена відносна частота)')
+                ax.set_ylim(0, 1)
             elif self.cumulative_checkbox.isChecked():
                 rel_cum_freq = np.cumsum(hist) / len(data)
                 ax.plot(midpoints, rel_cum_freq, 'o-', color='red')
@@ -161,6 +164,11 @@ class Lab1Widget(QWidget):
             elif self.ecdf_checkbox.isChecked():
                 ax.step(data_sorted, np.arange(1, len(data) + 1) / len(data), where='post', color='purple')
                 ax.set_title('Емпірична функція розподілу')
+                ax.set_ylim(0, 1)
+            elif self.ecdf_bins_checkbox.isChecked():
+                rel_cum_freq = np.cumsum(hist) / len(data)
+                ax.step(bin_edges[:-1], rel_cum_freq, where='post', color='orange')
+                ax.set_title('Емпірична функція розподілу (інтервальний ряд)')
                 ax.set_ylim(0, 1)
             else:
                 ax.text(0.5, 0.5, 'Оберіть хоча б один графік', ha='center', va='center')
