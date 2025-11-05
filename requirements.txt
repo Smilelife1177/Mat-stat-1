@@ -1,5 +1,7 @@
-graphviz==0.21
-matplotlib==3.10.6
-numpy==2.3.3
-pandas==2.3.2
-scipy==1.16.2
+graphviz==0.20.3
+matplotlib==3.10.7
+numpy==2.3.4
+pandas==2.3.3
+PyQt5==5.15.11
+PyQt5_sip==12.17.0
+scipy==1.16.3
