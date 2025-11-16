@@ -2,7 +2,8 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTabWidget
 import course01 as lab1
-import course02 as lab2  # Нова лабораторна
+import course02 as lab2
+import course03 as lab3  # Нова лабораторна
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -19,7 +20,8 @@ class MainWindow(QMainWindow):
 
         # Додавання лабораторних робіт
         lab1.create_tab(self.tab_widget)
-        lab2.create_tab(self.tab_widget)  # Додаємо Lab 2
+        lab2.create_tab(self.tab_widget)
+        lab3.create_tab(self.tab_widget)  # Додаємо Lab 3
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
