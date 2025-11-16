@@ -118,47 +118,66 @@ class Lab3Widget(QWidget):
             self.table.setItem(i, 4, QTableWidgetItem(f"{rank_y[i]:.1f}"))
             self.table.setItem(i, 5, QTableWidgetItem(f"{d_i[i]:.1f}"))
             self.table.setItem(i, 6, QTableWidgetItem(f"{d_i2[i]:.1f}"))
-
+###
     def calculate_statistics(self):
         if self.data_x is None: return
         n = len(self.data_x)
 
         # --- Коефіцієнт кореляційного відношення η(Y|X) ---
-        # Групуємо Y за унікальними значеннями X (для оцінки)
-        unique_x, indices = np.unique(self.data_x, return_inverse=True)
-        group_means = np.array([np.mean(self.data_y[indices == i]) for i in range(len(unique_x))])
-        y_pred = group_means[indices]
+        # Групуємо X по інтервалах (наприклад, 10 бінів)
+        num_bins = min(10, n // 5 + 1)  # адаптивна кількість бінів
+        hist, bin_edges = np.histogram(self.data_x, bins=num_bins)
+        bin_indices = np.digitize(self.data_x, bin_edges[1:-1])  # індекси бінів
 
-        ss_total = np.sum((self.data_y - np.mean(self.data_y))**2)
-        ss_explained = np.sum((y_pred - np.mean(self.data_y))**2)
+        group_means = []
+        group_sizes = []
+        for i in range(num_bins):
+            mask = (bin_indices == i)
+            if np.sum(mask) > 0:
+                group_means.append(np.mean(self.data_y[mask]))
+                group_sizes.append(np.sum(mask))
+            else:
+                group_means.append(np.nan)
+                group_sizes.append(0)
+
+        group_means = np.array(group_means)
+        y_pred = np.zeros_like(self.data_y)
+        for i in range(num_bins):
+            mask = (bin_indices == i)
+            y_pred[mask] = group_means[i]
+
+        # Видаляємо NaN (порожні біни)
+        valid = ~np.isnan(y_pred)
+        y_pred = y_pred[valid]
+        y_valid = self.data_y[valid]
+
+        ss_total = np.sum((y_valid - np.mean(y_valid))**2)
+        ss_explained = np.sum((y_pred - np.mean(y_valid))**2)
         eta_yx = np.sqrt(ss_explained / ss_total) if ss_total > 0 else 0
 
-        # Значущість η²: F-статистика
-        k = len(unique_x)  # кількість груп
+        # F-статистика
+        k = num_bins
         if k > 1 and n > k:
-            F_eta = (ss_explained / (k - 1)) / ((ss_total - ss_explained) / (n - k))
+            ss_residual = ss_total - ss_explained
+            F_eta = (ss_explained / (k - 1)) / (ss_residual / (n - k)) if ss_residual > 0 else np.inf
             p_eta = stats.f.sf(F_eta, k-1, n-k)
         else:
             F_eta = p_eta = 0
 
-        # --- Коефіцієнт Спірмена ---
+        # --- Інші коефіцієнти ---
         rho_spearman, p_spearman = stats.spearmanr(self.data_x, self.data_y)
-
-        # --- Коефіцієнт Кендалла ---
         tau_kendall, p_kendall = stats.kendalltau(self.data_x, self.data_y)
-
-        # --- Коефіцієнт Пірсона (для порівняння) ---
         r_pearson = np.corrcoef(self.data_x, self.data_y)[0,1]
 
         results = (
             f"Коефіцієнт кореляційного відношення η(Y|X) = {eta_yx:.4f}\n"
-            f"  F-статистика = {F_eta:.4f}, p-value = {p_eta:.4f}\n"
+            f"  F-статистика = {F_eta:.4f}, p-value = {p_eta:.4f} (бінів: {k})\n"
             f"Коефіцієнт Спірмена ρ = {rho_spearman:.4f}, p-value = {p_spearman:.4f}\n"
             f"Коефіцієнт Кендалла τ = {tau_kendall:.4f}, p-value = {p_kendall:.4f}\n"
             f"Коефіцієнт Пірсона r = {r_pearson:.4f} (для порівняння)"
         )
         self.result_label.setText(results)
-
+###
     def update_plots(self):
         if self.data_x is None or self.data_y is None:
             return
