@@ -145,13 +145,63 @@ class Lab2Widget(QWidget):
         self.result_label.setText(results)
 
     def chi_square_test(self):
-        if self.data_x is None: return 0, 1
+        if self.data_x is None or len(self.data_x) < 20:
+            return 0, 1
+
         data = self.data_x
-        hist, _ = np.histogram(data, bins=10)
         n = len(data)
-        expected = n / 10
-        chi2 = np.sum((hist - expected)**2 / expected)
-        p_value = 1 - chi2_dist.cdf(chi2, df=9)
+        mx = np.mean(data)
+        sx = np.std(data, ddof=1)  # неупереджена оцінка
+
+        # Кількість інтервалів — правило Стерджеса або трохи менше
+        k = max(5, min(int(1 + 3.322 * np.log10(n)), 15))
+        
+        # Межі інтервалів — краще використовувати квантилі нормального розподілу
+        from scipy.stats import norm
+        prob = np.linspace(0, 1, k + 1)
+        edges = norm.ppf(prob, loc=mx, scale=sx)
+        # виправляємо -inf і +inf
+        edges[0] = data.min() - 1e-6
+        edges[-1] = data.max() + 1e-6
+
+        hist, bin_edges = np.histogram(data, bins=edges)
+        
+        # Теоретичні ймовірності для кожного інтервалу
+        expected = np.zeros(k)
+        for i in range(k):
+            p_lower = norm.cdf(bin_edges[i], loc=mx, scale=sx)
+            p_upper = norm.cdf(bin_edges[i+1], loc=mx, scale=sx)
+            expected[i] = n * (p_upper - p_lower)
+
+        # Об’єднуємо інтервали з expected < 5
+        observed = []
+        exp = []
+        i = 0
+        while i < len(hist):
+            curr_obs = hist[i]
+            curr_exp = expected[i]
+            i += 1
+            while curr_exp < 5 and i < len(hist):
+                curr_obs += hist[i]
+                curr_exp += expected[i]
+                i += 1
+            if curr_exp >= 5:  # тільки якщо після об’єднання >=5
+                observed.append(curr_obs)
+                exp.append(curr_exp)
+
+        if len(observed) < 3:  # занадто мало інтервалів після об’єднання
+            return 0, 1
+
+        observed = np.array(observed)
+        exp = np.array(exp)
+
+        chi2 = np.sum((observed - exp)**2 / exp)
+        df = len(observed) - 1 - 2  # -2 бо оцінювали два параметри (mx, sx)
+        df = max(df, 1)
+
+        from scipy.stats import chi2 as chi2_dist
+        p_value = 1 - chi2_dist.cdf(chi2, df)
+
         return chi2, p_value
 
     def update_plots(self):
