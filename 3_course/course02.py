@@ -8,6 +8,9 @@ from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from scipy.stats import chi2 as chi2_dist
+from mpl_toolkits.mplot3d import Axes3D  # Додай цей імпорт нагору файлу
+import matplotlib.pyplot as plt
+
 
 
 class Lab2Widget(QWidget):
@@ -42,6 +45,14 @@ class Lab2Widget(QWidget):
         self.scatter_cb = QCheckBox("Діаграма розсіювання")
         self.corr_field_cb = QCheckBox("Поле кореляції")
         self.hist2d_cb = QCheckBox("2D гістограма")
+        self.hist3d_cb = QCheckBox("3D-стовпчикова гістограма")  # НОВИЙ ЧЕКБОКС
+
+        self.checkboxes = [self.scatter_cb, self.corr_field_cb, self.hist2d_cb, self.hist3d_cb]
+        for cb in self.checkboxes:
+            cb.stateChanged.connect(self.handle_checkbox_change)
+            checkbox_layout.addWidget(cb)
+        self.scatter_cb.setChecked(True)
+        layout.addLayout(checkbox_layout)
 
         self.checkboxes = [self.scatter_cb, self.corr_field_cb, self.hist2d_cb]
         for cb in self.checkboxes:
@@ -148,17 +159,41 @@ class Lab2Widget(QWidget):
             return
 
         self.figure.clear()
-        ax = self.figure.add_subplot(111)
-        self.figure.suptitle('Лабораторна робота 2: Двовимірна вибірка')
 
-        if self.scatter_cb.isChecked():
-            ax.scatter(self.data_x, self.data_y, alpha=0.6, color='blue')
-            ax.set_title('Діаграма розсіювання')
+        if self.hist3d_cb.isChecked():
+            # 3D стовпчикова гістограма
+            ax = self.figure.add_subplot(111, projection='3d')
+            hist, xedges, yedges = np.histogram2d(self.data_x, self.data_y, bins=12)
+
+            xpos, ypos = np.meshgrid(xedges[:-1] + (xedges[1] - xedges[0])/2,
+                                     yedges[:-1] + (yedges[1] - yedges[0])/2, indexing="ij")
+            xpos = xpos.ravel()
+            ypos = ypos.ravel()
+            zpos = np.zeros_like(xpos)
+
+            dx = dy = (xedges[1] - xedges[0]) * 0.8  # ширина стовпчика
+            dz = hist.ravel()
+
+            # Колір залежно від висоти
+            colors = plt.cm.viridis(dz / dz.max())
+
+            ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=colors, zsort='average', shade=True)
+
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
-            ax.grid(True, alpha=0.3)
+            ax.set_zlabel('Частота')
+            ax.set_title('Двовимірна гістограма відносних частот')
+
+        elif self.hist2d_cb.isChecked():
+            ax = self.figure.add_subplot(111)
+            hb = ax.hist2d(self.data_x, self.data_y, bins=15, cmap='Blues')
+            self.figure.colorbar(hb[3], ax=ax, label='Частота')
+            ax.set_title('2D Гістограма')
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
 
         elif self.corr_field_cb.isChecked():
+            ax = self.figure.add_subplot(111)
             ax.scatter(self.data_x, self.data_y, alpha=0.6, color='green')
             z = np.polyfit(self.data_x, self.data_y, 1)
             p = np.poly1d(z)
@@ -170,14 +205,16 @@ class Lab2Widget(QWidget):
             ax.set_ylabel('Y')
             ax.grid(True, alpha=0.3)
 
-        elif self.hist2d_cb.isChecked():
-            hb = ax.hist2d(self.data_x, self.data_y, bins=15, cmap='Blues')
-            self.figure.colorbar(hb[3], ax=ax, label='Частота')
-            ax.set_title('2D Гістограма')
+        elif self.scatter_cb.isChecked():
+            ax = self.figure.add_subplot(111)
+            ax.scatter(self.data_x, self.data_y, alpha=0.6, color='blue')
+            ax.set_title('Діаграма розсіювання')
             ax.set_xlabel('X')
             ax.set_ylabel('Y')
+            ax.grid(True, alpha=0.3)
 
         else:
+            ax = self.figure.add_subplot(111)
             ax.text(0.5, 0.5, 'Оберіть графік', transform=ax.transAxes,
                     ha='center', va='center', fontsize=14)
 
